@@ -1,0 +1,18 @@
+{
+  "site": 1,
+  "model": "gpt-5.4-mini",
+  "imageModel": "gpt-image-1-mini",
+  "imageQuality": "low",
+  "imageSize": "1536x1024",
+  "success": 1,
+  "input_tokens": 1051,
+  "output_tokens": 3700,
+  "total_tokens": 4751,
+  "text_estimated_usd": 0.017438,
+  "text_estimated_krw": 26.9,
+  "image_estimated_usd": 0.006,
+  "image_estimated_krw": 9.3,
+  "estimated_usd": 0.023438,
+  "estimated_krw": 36.2,
+  "usd_krw": 1543.57527
+}

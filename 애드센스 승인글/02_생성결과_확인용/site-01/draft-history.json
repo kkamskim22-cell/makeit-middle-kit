@@ -1,0 +1,17 @@
+[
+  {
+    "ok": true,
+    "site": 1,
+    "title": "메모를 자꾸 미루는 사람을 위한 30초 기록 시작법",
+    "postId": 1512,
+    "status": "draft",
+    "slug": "quick-note-taking-start-method",
+    "categoryId": 8,
+    "parentCategoryId": 5,
+    "categoryIds": [
+      5,
+      8
+    ],
+    "createdAt": "2026-10-13T14:57:09.438Z"
+  }
+]

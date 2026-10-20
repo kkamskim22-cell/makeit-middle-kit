@@ -36,6 +36,7 @@ jobs:
         run: npm ci
 
       - name: 사이트 1 임시글 1개 생성
+        id: site_1
         continue-on-error: true
         working-directory: 99_절대_건들지마세요_프로그램파일
         env:
@@ -47,6 +48,7 @@ jobs:
         run: npm run adsense:create-drafts -- --site=1 --limit=1 --date-mode=now
 
       - name: 사이트 2 임시글 1개 생성
+        id: site_2
         continue-on-error: true
         working-directory: 99_절대_건들지마세요_프로그램파일
         env:
@@ -61,3 +63,11 @@ jobs:
         if: always()
         working-directory: 99_절대_건들지마세요_프로그램파일
         run: npm run save
+
+      - name: 자동화 결과 확인
+        if: always()
+        run: |
+          if [ "${{ steps.site_1.outcome }}" != "success" ] || [ "${{ steps.site_2.outcome }}" != "success" ]; then
+            echo "사이트 1 또는 사이트 2 생성 단계에서 확인이 필요한 오류가 발생했습니다."
+            exit 1
+          fi

@@ -1,0 +1,63 @@
+name: 사이트 1·2 매일 임시글 생성
+
+on:
+  schedule:
+    # GitHub Actions cron은 UTC 기준입니다. 23:00 UTC = 다음 날 08:00 Asia/Seoul.
+    - cron: "0 23 * * *"
+
+# 작성 기록만 안전하게 저장하기 위한 최소 권한입니다.
+permissions:
+  contents: write
+
+# 같은 예약이 겹쳐도 한 번만 실행합니다.
+concurrency:
+  group: adsense-daily-drafts-sites-01-02
+  cancel-in-progress: false
+
+jobs:
+  create-drafts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 저장소 가져오기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 99_절대_건들지마세요_프로그램파일/package-lock.json
+
+      - name: 프로그램 설치
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        run: npm ci
+
+      - name: 사이트 1 임시글 1개 생성
+        continue-on-error: true
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        env:
+          MAKEIT_MIDDLE_LICENSE: ${{ secrets.MAKEIT_MIDDLE_LICENSE }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ADSENSE_SITE_01_URL: ${{ secrets.ADSENSE_SITE_01_URL }}
+          ADSENSE_SITE_01_USER: ${{ secrets.ADSENSE_SITE_01_USER }}
+          ADSENSE_SITE_01_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_01_APP_PASSWORD }}
+        run: npm run adsense:create-drafts -- --site=1 --limit=1 --date-mode=now
+
+      - name: 사이트 2 임시글 1개 생성
+        continue-on-error: true
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        env:
+          MAKEIT_MIDDLE_LICENSE: ${{ secrets.MAKEIT_MIDDLE_LICENSE }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ADSENSE_SITE_02_URL: ${{ secrets.ADSENSE_SITE_02_URL }}
+          ADSENSE_SITE_02_USER: ${{ secrets.ADSENSE_SITE_02_USER }}
+          ADSENSE_SITE_02_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_02_APP_PASSWORD }}
+        run: npm run adsense:create-drafts -- --site=2 --limit=1 --date-mode=now
+
+      - name: 작성 기록 안전 저장
+        if: always()
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        run: npm run save

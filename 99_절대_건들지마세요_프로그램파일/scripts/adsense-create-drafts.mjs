@@ -5,6 +5,7 @@ import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {readTitleEntries, resolveTitleFile} from "./title-files.mjs";
+import * as titleFiles from "./title-files.mjs";
 import {keysGuideMessage, requireLicense} from "./lib/env.mjs";
 import {wpFetch} from "./lib/wp.mjs";
 import {돈줄, 예산상태, 원장기록, 진행표시, 천단위, 퍼센트, 퍼센트문구} from "./lib/usage.mjs";
@@ -24,6 +25,24 @@ function argValue(name, fallback = "") {
   const prefix = `--${name}=`;
   const hit = process.argv.find((arg) => arg.startsWith(prefix));
   return hit ? hit.slice(prefix.length) : fallback;
+}
+
+// --child-categories=1-1,1-2 처럼 제목 파일의 세부 카테고리를 지정하면,
+// 각 세부 카테고리에서 아직 쓰지 않은 첫 제목 하나씩만 고른다.
+// 중복 제목을 먼저 제외한 뒤 적용해야, 이미 쓴 첫 제목 때문에 같은 카테고리의
+// 새 제목을 놓치지 않는다.
+function parseChildCategoryKeys(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+
+  const keys = raw.split(",").map((part) => part.trim()).filter(Boolean);
+  if (keys.length === 0 || keys.some((key) => !/^\d+-\d+$/.test(key))) {
+    throw new Error("--child-categories는 1-1,1-2처럼 세부 카테고리 번호를 쉼표로 구분해 입력해야 합니다.");
+  }
+  if (new Set(keys).size !== keys.length) {
+    throw new Error("--child-categories에 같은 세부 카테고리가 두 번 들어 있습니다.");
+  }
+  return keys;
 }
 
 function ready(value, placeholders = []) {
@@ -1615,6 +1634,7 @@ const site = Number(argValue("site", "1"));
 const limit = Number(argValue("limit", "0"));
 const includeUsedTitles = ["1", "true", "yes"].includes(argValue("include-used", "0").toLowerCase());
 const dryRun = ["1", "true", "yes"].includes(argValue("dry-run", "0").toLowerCase());
+const childCategoryKeys = parseChildCategoryKeys(argValue("child-categories", ""));
 const prefix = sitePrefix(site);
 const model = env.ARTICLE_MODEL || "gpt-5.4-mini";
 const minChars = Number(env.ARTICLE_MIN_CHARS || 3000);
@@ -1689,7 +1709,10 @@ const usedTitleKeys = new Set([
 const availableTitleEntries = includeUsedTitles
   ? allTitleEntries
   : allTitleEntries.filter((entry) => !usedTitleKeys.has(titleKey(entry.title)));
-const titleEntries = limit > 0 ? availableTitleEntries.slice(0, limit) : availableTitleEntries;
+const childCategoryTitleEntries = childCategoryKeys.length > 0
+  ? titleFiles.selectOneTitlePerChildCategory(availableTitleEntries, childCategoryKeys)
+  : availableTitleEntries;
+const titleEntries = limit > 0 ? childCategoryTitleEntries.slice(0, limit) : childCategoryTitleEntries;
 const titles = titleEntries.map((entry) => entry.title);
 if (titles.length === 0) {
   if (allTitleEntries.length > 0 && usedTitleKeys.size > 0 && !includeUsedTitles) {
@@ -1719,6 +1742,9 @@ console.log(`제목 파일: ${titlesPath}`);
 console.log(`제목 ${titles.length}개 선택 / 전체 ${allTitleEntries.length}개 / 이전 성공 ${previousDraftHistory.length}개 자동 제외 / 모델 ${model} / 본문 ${minChars}자 이상 목표`);
 if (limit > 0) {
   console.log(`제목 ${allTitleEntries.length}개 중 아직 안 쓴 제목 ${availableTitleEntries.length}개 / 이번에 ${titles.length}개를 만듭니다.`);
+}
+if (childCategoryKeys.length > 0) {
+  console.log(`세부 카테고리별 제목 1개 선택: ${childCategoryKeys.join(", ")}`);
 }
 if (titleCatalog.categories.length > 0) {
   console.log(`제목 파일 카테고리 매핑: 대표 ${titleCatalog.categories.length}개 / 세부 ${titleCatalog.categories.reduce((sum, category) => sum + category.children.length, 0)}개`);

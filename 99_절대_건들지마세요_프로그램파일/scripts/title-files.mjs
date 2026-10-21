@@ -146,6 +146,30 @@ export function cleanTitle(line, {removeNumbering = false} = {}) {
   return value.trim();
 }
 
+// 지정한 세부 카테고리에서 제목을 하나씩 꺼낼 때 쓰는 키다.
+// 제목 파일의 "세부 카테고리 1-2" 표기와 같은 형태로 유지한다.
+export function childCategoryKey(entry) {
+  const parent = Number(entry?.parentCategoryNumber || 0);
+  const child = Number(entry?.childCategoryNumber || 0);
+  return parent > 0 && child > 0 ? `${parent}-${child}` : "";
+}
+
+export function selectOneTitlePerChildCategory(entries, childCategoryKeys) {
+  if (childCategoryKeys.length === 0) return entries;
+
+  const selected = [];
+  const unavailable = [];
+  for (const key of childCategoryKeys) {
+    const entry = entries.find((candidate) => childCategoryKey(candidate) === key);
+    if (entry) selected.push(entry);
+    else unavailable.push(key);
+  }
+  if (unavailable.length > 0) {
+    throw new Error(`세부 카테고리 ${unavailable.join(", ")}에서 아직 쓰지 않은 제목을 찾지 못했습니다.`);
+  }
+  return selected;
+}
+
 function isNumberedTitleLine(line) {
   return /^\s*\(?\d{1,4}\)?[.)\-\s]+/.test(line);
 }

@@ -170,6 +170,49 @@ export function selectOneTitlePerChildCategory(entries, childCategoryKeys) {
   return selected;
 }
 
+// 세부 카테고리별로 이미 쓴 제목 수가 가장 적은 순서대로 고른다.
+//
+// 매일 3개씩 만드는 자동화는 이 함수를 통해 15개 세부 카테고리를
+// 3개 단위로 순환한다. 실행이 하루 건너뛰어도 날짜가 아니라 실제 기록을
+// 기준으로 하므로, 특정 카테고리를 건너뛰거나 먼저 반복하지 않는다.
+export function selectLeastUsedChildCategoryKeys(allEntries, availableEntries, count) {
+  const wanted = Number(count);
+  if (!Number.isInteger(wanted) || wanted < 1) {
+    throw new Error("세부 카테고리 순환 개수는 1 이상의 정수여야 합니다.");
+  }
+
+  const totals = new Map();
+  const available = new Map();
+  for (const entry of allEntries) {
+    const key = childCategoryKey(entry);
+    if (!key) continue;
+    totals.set(key, (totals.get(key) || 0) + 1);
+  }
+  for (const entry of availableEntries) {
+    const key = childCategoryKey(entry);
+    if (!key) continue;
+    available.set(key, (available.get(key) || 0) + 1);
+  }
+
+  const compareKeys = (left, right) => {
+    const [leftParent, leftChild] = left.split("-").map(Number);
+    const [rightParent, rightChild] = right.split("-").map(Number);
+    return leftParent - rightParent || leftChild - rightChild;
+  };
+  const candidates = [...available.keys()]
+    .filter((key) => available.get(key) > 0)
+    .sort((left, right) => {
+      const leftUsed = (totals.get(left) || 0) - (available.get(left) || 0);
+      const rightUsed = (totals.get(right) || 0) - (available.get(right) || 0);
+      return leftUsed - rightUsed || compareKeys(left, right);
+    });
+
+  if (candidates.length < wanted) {
+    throw new Error(`아직 쓰지 않은 제목이 있는 세부 카테고리가 ${candidates.length}개뿐이라 ${wanted}개를 순환 선택할 수 없습니다.`);
+  }
+  return candidates.slice(0, wanted);
+}
+
 function isNumberedTitleLine(line) {
   return /^\s*\(?\d{1,4}\)?[.)\-\s]+/.test(line);
 }
@@ -184,7 +227,9 @@ function isIgnoredLine(line) {
   if (/^카테고리\s*설명$/.test(value)) return true;
   if (/^세부\s*카테고리\s*설명$/.test(value)) return true;
   if (/^세부\s*카테고리\s*\d/.test(value)) return true;
-  if (/^글\s*제목\s*\d+\s*개$/.test(value)) return true;
+  if (/^글\s*제목\s*\d+\s*개(?:\s*\([^)]*\))?$/.test(value)) return true;
+  if (/^전체\s*카테고리\s*\d+\s*개$/.test(value)) return true;
+  if (/^(?:선택한\s*주제|메인\s*키워드)\s*:/.test(value)) return true;
   if (/^진행\s*상황\s*:/.test(value)) return true;
   if (/^다음을\s*입력/.test(value)) return true;
   if (/^다음\s*카테고리/.test(value)) return true;

@@ -45,6 +45,15 @@ function parseChildCategoryKeys(value) {
   return keys;
 }
 
+function parseChildCategoryCycleCount(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+  if (!/^\d+$/.test(raw) || Number(raw) < 1) {
+    throw new Error("--child-category-cycle은 1 이상의 정수여야 합니다.");
+  }
+  return Number(raw);
+}
+
 function ready(value, placeholders = []) {
   if (!value) return false;
   const lowered = value.toLowerCase();
@@ -1634,7 +1643,11 @@ const site = Number(argValue("site", "1"));
 const limit = Number(argValue("limit", "0"));
 const includeUsedTitles = ["1", "true", "yes"].includes(argValue("include-used", "0").toLowerCase());
 const dryRun = ["1", "true", "yes"].includes(argValue("dry-run", "0").toLowerCase());
-const childCategoryKeys = parseChildCategoryKeys(argValue("child-categories", ""));
+const requestedChildCategoryKeys = parseChildCategoryKeys(argValue("child-categories", ""));
+const childCategoryCycleCount = parseChildCategoryCycleCount(argValue("child-category-cycle", ""));
+if (requestedChildCategoryKeys.length > 0 && childCategoryCycleCount > 0) {
+  throw new Error("--child-categories와 --child-category-cycle은 함께 사용할 수 없습니다.");
+}
 const prefix = sitePrefix(site);
 const model = env.ARTICLE_MODEL || "gpt-5.4-mini";
 const minChars = Number(env.ARTICLE_MIN_CHARS || 3000);
@@ -1709,6 +1722,11 @@ const usedTitleKeys = new Set([
 const availableTitleEntries = includeUsedTitles
   ? allTitleEntries
   : allTitleEntries.filter((entry) => !usedTitleKeys.has(titleKey(entry.title)));
+const childCategoryKeys = requestedChildCategoryKeys.length > 0
+  ? requestedChildCategoryKeys
+  : childCategoryCycleCount > 0
+    ? titleFiles.selectLeastUsedChildCategoryKeys(allTitleEntries, availableTitleEntries, childCategoryCycleCount)
+    : [];
 const childCategoryTitleEntries = childCategoryKeys.length > 0
   ? titleFiles.selectOneTitlePerChildCategory(availableTitleEntries, childCategoryKeys)
   : availableTitleEntries;
@@ -1744,7 +1762,7 @@ if (limit > 0) {
   console.log(`제목 ${allTitleEntries.length}개 중 아직 안 쓴 제목 ${availableTitleEntries.length}개 / 이번에 ${titles.length}개를 만듭니다.`);
 }
 if (childCategoryKeys.length > 0) {
-  console.log(`세부 카테고리별 제목 1개 선택: ${childCategoryKeys.join(", ")}`);
+  console.log(`세부 카테고리별 제목 1개 선택${childCategoryCycleCount > 0 ? " (기록 순환)" : ""}: ${childCategoryKeys.join(", ")}`);
 }
 if (titleCatalog.categories.length > 0) {
   console.log(`제목 파일 카테고리 매핑: 대표 ${titleCatalog.categories.length}개 / 세부 ${titleCatalog.categories.reduce((sum, category) => sum + category.children.length, 0)}개`);

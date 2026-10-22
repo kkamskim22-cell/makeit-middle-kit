@@ -45,6 +45,28 @@ function parseChildCategoryKeys(value) {
   return keys;
 }
 
+function readCategoryRotationState(filePath) {
+  if (!existsSync(filePath)) return {lastChildCategoryKey: ""};
+  try {
+    const parsed = JSON.parse(readFileSync(filePath, "utf8"));
+    const key = String(parsed?.lastChildCategoryKey || "").trim();
+    if (key && !/^\d+-\d+$/.test(key)) throw new Error("invalid key");
+    return {lastChildCategoryKey: key};
+  } catch {
+    throw new Error("사이트 2 세부 카테고리 순환 기록을 읽지 못했습니다. 확인 후 다시 실행해주세요.");
+  }
+}
+
+function lastChildCategoryFromHistory(history, entries) {
+  const entryByTitle = new Map(entries.map((entry) => [titleKey(entry.title), entry]));
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const entry = entryByTitle.get(titleKey(history[index]?.title));
+    const key = titleFiles.childCategoryKey(entry);
+    if (key) return key;
+  }
+  return "";
+}
+
 function ready(value, placeholders = []) {
   if (!value) return false;
   const lowered = value.toLowerCase();
@@ -1634,7 +1656,10 @@ const site = Number(argValue("site", "1"));
 const limit = Number(argValue("limit", "0"));
 const includeUsedTitles = ["1", "true", "yes"].includes(argValue("include-used", "0").toLowerCase());
 const dryRun = ["1", "true", "yes"].includes(argValue("dry-run", "0").toLowerCase());
-const childCategoryKeys = parseChildCategoryKeys(argValue("child-categories", ""));
+const childCategoriesArgument = argValue("child-categories", "").trim();
+const rotateChildCategories = childCategoriesArgument === "next-3";
+if (rotateChildCategories && site !== 2) throw new Error("--child-categories=next-3은 사이트 2 자동화에서만 사용할 수 있습니다.");
+const childCategoryKeys = rotateChildCategories ? [] : parseChildCategoryKeys(childCategoriesArgument);
 const prefix = sitePrefix(site);
 const model = env.ARTICLE_MODEL || "gpt-5.4-mini";
 const minChars = Number(env.ARTICLE_MIN_CHARS || 3000);
@@ -1646,6 +1671,7 @@ const visibleOutputDir = join(
   "02_생성결과_확인용",
   `site-${String(site).padStart(2, "0")}`,
 );
+const categoryRotationPath = join(visibleOutputDir, "category-rotation.json");
 // 기본은 'now' — 수강생이 돌리는 그 시각으로 저장된다.
 // 예전 기본값은 past-daily(30일 전부터 하루 1개)였는데, 아무도 그렇게 설정한 적이
 // 없는데 갑자기 한 달 전 날짜가 찍혀 나와 혼란스러웠다.
@@ -1689,6 +1715,9 @@ if (!dryRun && (!ready(siteUrl, ["example.com", "example-"]) || !ready(username,
 const titleCatalog = readTitleEntries(titlesPath);
 const allTitleEntries = titleCatalog.entries;
 const previousDraftHistory = readDraftHistory(outputDir, visibleOutputDir);
+const categoryRotationState = rotateChildCategories
+  ? readCategoryRotationState(categoryRotationPath)
+  : {lastChildCategoryKey: ""};
 
 // 이미 쓴 글 걸러내기 ① 이 키트로 만든 기록  ② 워드프레스에 실제로 올라가 있는 글
 const existingOnWordPress = includeUsedTitles
@@ -1709,14 +1738,30 @@ const usedTitleKeys = new Set([
 const availableTitleEntries = includeUsedTitles
   ? allTitleEntries
   : allTitleEntries.filter((entry) => !usedTitleKeys.has(titleKey(entry.title)));
-const childCategoryTitleEntries = childCategoryKeys.length > 0
+const rotationAfterKey = categoryRotationState.lastChildCategoryKey || lastChildCategoryFromHistory(previousDraftHistory, allTitleEntries);
+const rotatingCategorySelection = rotateChildCategories
+  ? titleFiles.selectNextTitlesByChildCategory({
+    allEntries: allTitleEntries,
+    availableEntries: availableTitleEntries,
+    afterKey: rotationAfterKey,
+    count: Math.max(1, limit || 3),
+  })
+  : {entries: [], categoryKeys: []};
+const childCategoryTitleEntries = rotateChildCategories
+  ? rotatingCategorySelection.entries
+  : childCategoryKeys.length > 0
   ? titleFiles.selectOneTitlePerChildCategory(availableTitleEntries, childCategoryKeys)
   : availableTitleEntries;
 const titleEntries = limit > 0 ? childCategoryTitleEntries.slice(0, limit) : childCategoryTitleEntries;
 const titles = titleEntries.map((entry) => entry.title);
 if (titles.length === 0) {
   if (allTitleEntries.length > 0 && usedTitleKeys.size > 0 && !includeUsedTitles) {
-    console.error(`새로 만들 제목이 없어요. 제목 파일 ${allTitleEntries.length}개가 이미 전부 사용됐습니다.`);
+    const message = `새로 만들 제목이 없어요. 제목 파일 ${allTitleEntries.length}개가 이미 전부 사용됐습니다.`;
+    if (rotateChildCategories && availableTitleEntries.length === 0) {
+      console.log(`${message} 사이트 2 자동 생성은 새 글 없이 정상 중단합니다.`);
+      process.exit(0);
+    }
+    console.error(message);
     console.error("제목 파일에 새 제목을 더 넣어주세요. 이미 쓴 글을 일부러 다시 만들려면 --include-used=1 을 붙이면 됩니다.");
   } else {
     console.error("제목 목록이 비어 있음. titles.txt에 제목을 한 줄에 하나씩 넣어야 함.");
@@ -1743,7 +1788,9 @@ console.log(`제목 ${titles.length}개 선택 / 전체 ${allTitleEntries.length
 if (limit > 0) {
   console.log(`제목 ${allTitleEntries.length}개 중 아직 안 쓴 제목 ${availableTitleEntries.length}개 / 이번에 ${titles.length}개를 만듭니다.`);
 }
-if (childCategoryKeys.length > 0) {
+if (rotateChildCategories) {
+  console.log(`세부 카테고리 순환 선택: ${rotatingCategorySelection.categoryKeys.join(", ") || "남은 제목 없음"}`);
+} else if (childCategoryKeys.length > 0) {
   console.log(`세부 카테고리별 제목 1개 선택: ${childCategoryKeys.join(", ")}`);
 }
 if (titleCatalog.categories.length > 0) {
@@ -1920,6 +1967,7 @@ for (let index = 0; index < titles.length; index += 1) {
       inlineImageCaption: featuredMedia.caption,
       mappedParentCategory: titleEntry.parentCategory || "",
       mappedChildCategory: titleEntry.childCategory || "",
+      titleChildCategoryKey: titleFiles.childCategoryKey(titleEntry),
       mappedChildCategoryDescription: titleEntry.childCategoryDescription || "",
       categoryId: selectedCategory?.id || 0,
       parentCategoryId: selectedCategory?.parentId || 0,
@@ -1986,6 +2034,19 @@ writeFileSync(join(visibleOutputDir, "last-run.json"), JSON.stringify(results, n
 const draftHistory = mergeDraftHistory(previousDraftHistory, results);
 writeFileSync(join(outputDir, "draft-history.json"), JSON.stringify(draftHistory, null, 2), "utf8");
 writeFileSync(join(visibleOutputDir, "draft-history.json"), JSON.stringify(draftHistory, null, 2), "utf8");
+
+if (rotateChildCategories) {
+  const lastSuccessfulCategory = [...results]
+    .reverse()
+    .find((item) => item.ok && !item.skipped && item.titleChildCategoryKey)?.titleChildCategoryKey;
+  if (lastSuccessfulCategory) {
+    writeFileSync(categoryRotationPath, JSON.stringify({
+      version: 1,
+      lastChildCategoryKey: lastSuccessfulCategory,
+      updatedAt: new Date().toISOString(),
+    }, null, 2), "utf8");
+  }
+}
 
 const costSummary = results.reduce(
   (acc, item) => {

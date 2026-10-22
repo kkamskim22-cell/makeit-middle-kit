@@ -170,6 +170,46 @@ export function selectOneTitlePerChildCategory(entries, childCategoryKeys) {
   return selected;
 }
 
+// 제목 파일에 적힌 순서대로 세부 카테고리 목록을 만든다. 사이트 2 자동화가
+// 매번 다음 세부 카테고리부터 이어서 고를 때 사용한다.
+export function childCategoryKeysInOrder(entries) {
+  const seen = new Set();
+  const keys = [];
+  for (const entry of entries) {
+    const key = childCategoryKey(entry);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+// 마지막으로 쓴 세부 카테고리 다음부터, 서로 다른 카테고리의 제목을 하나씩 고른다.
+// 이미 소진된 카테고리는 건너뛰며, 남은 제목이 없으면 빈 목록을 돌려준다.
+export function selectNextTitlesByChildCategory({allEntries, availableEntries, afterKey = "", count = 3}) {
+  const keys = childCategoryKeysInOrder(allEntries);
+  if (keys.length === 0 || count <= 0) return {entries: [], categoryKeys: []};
+
+  const startAt = Math.max(0, keys.indexOf(afterKey) + 1) % keys.length;
+  const firstAvailableByKey = new Map();
+  for (const entry of availableEntries) {
+    const key = childCategoryKey(entry);
+    if (key && !firstAvailableByKey.has(key)) firstAvailableByKey.set(key, entry);
+  }
+
+  const entries = [];
+  const categoryKeys = [];
+  for (let offset = 0; offset < keys.length && entries.length < count; offset += 1) {
+    const key = keys[(startAt + offset) % keys.length];
+    const entry = firstAvailableByKey.get(key);
+    if (!entry) continue;
+    entries.push(entry);
+    categoryKeys.push(key);
+  }
+  return {entries, categoryKeys};
+}
+
 function isNumberedTitleLine(line) {
   return /^\s*\(?\d{1,4}\)?[.)\-\s]+/.test(line);
 }

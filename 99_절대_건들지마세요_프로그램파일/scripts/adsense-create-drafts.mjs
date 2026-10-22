@@ -773,6 +773,7 @@ async function fetchAllPostTitles({siteUrl, username, appPassword}) {
   const perPage = 100;
   const titles = [];
   const dates = [];
+  let draftCount = 0;
   for (let page = 1; page <= 30; page += 1) {
     const url = `${base}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish,private&per_page=${perPage}&page=${page}&orderby=id&order=asc&_fields=title,date_gmt,status`;
     let response;
@@ -792,6 +793,7 @@ async function fetchAllPostTitles({siteUrl, username, appPassword}) {
     }
     if (!Array.isArray(data) || data.length === 0) break;
     for (const post of data) {
+      if (post?.status === "draft") draftCount += 1;
       const raw = stripTags(post?.title?.raw || post?.title?.rendered || "");
       if (raw) titles.push(raw);
       // 앞으로 공개될 글의 시각 — 새 글의 날짜를 잡을 때 이 시각들과 겹치지 않게 피한다
@@ -802,7 +804,7 @@ async function fetchAllPostTitles({siteUrl, username, appPassword}) {
     }
     if (data.length < perPage) break;
   }
-  return {titles, dates, complete: true};
+  return {titles, dates, draftCount, complete: true};
 }
 
 async function findExistingPostByTitle({siteUrl, username, appPassword, title}) {
@@ -1641,6 +1643,7 @@ async function updateDraftPostContent({siteUrl, username, appPassword, postId, h
 const env = requireLicense({scriptLabel: "애드센스 승인글 만들기"});
 const site = Number(argValue("site", "1"));
 const limit = Number(argValue("limit", "0"));
+const maxDrafts = Math.max(0, Number(argValue("max-drafts", "0")) || 0);
 const includeUsedTitles = ["1", "true", "yes"].includes(argValue("include-used", "0").toLowerCase());
 const dryRun = ["1", "true", "yes"].includes(argValue("dry-run", "0").toLowerCase());
 const requestedChildCategoryKeys = parseChildCategoryKeys(argValue("child-categories", ""));
@@ -1714,6 +1717,15 @@ if (!includeUsedTitles) {
     console.log(`(주의: 워드프레스 글 목록을 다 못 읽었어요 - ${existingOnWordPress.reason} / 글마다 발행 직전에 다시 확인합니다)`);
   }
 }
+if (maxDrafts > 0 && !existingOnWordPress.complete) {
+  console.error(`임시글 ${maxDrafts}개 제한을 안전하게 확인하지 못해 이번 실행을 멈춥니다.`);
+  process.exit(1);
+}
+const remainingDraftSlots = maxDrafts > 0 ? Math.max(0, maxDrafts - Number(existingOnWordPress.draftCount || 0)) : Infinity;
+if (maxDrafts > 0 && remainingDraftSlots === 0) {
+  console.log(`사이트 ${site}번 임시글이 이미 ${existingOnWordPress.draftCount}개라 목표 ${maxDrafts}개에 도달했습니다. 새 글을 만들지 않습니다.`);
+  process.exit(0);
+}
 
 const usedTitleKeys = new Set([
   ...previousDraftHistory.map((entry) => titleKey(entry.title)),
@@ -1730,7 +1742,8 @@ const childCategoryKeys = requestedChildCategoryKeys.length > 0
 const childCategoryTitleEntries = childCategoryKeys.length > 0
   ? titleFiles.selectOneTitlePerChildCategory(availableTitleEntries, childCategoryKeys)
   : availableTitleEntries;
-const titleEntries = limit > 0 ? childCategoryTitleEntries.slice(0, limit) : childCategoryTitleEntries;
+const requestedLimit = limit > 0 ? limit : childCategoryTitleEntries.length;
+const titleEntries = childCategoryTitleEntries.slice(0, Math.min(requestedLimit, remainingDraftSlots));
 const titles = titleEntries.map((entry) => entry.title);
 if (titles.length === 0) {
   if (allTitleEntries.length > 0 && usedTitleKeys.size > 0 && !includeUsedTitles) {
@@ -1756,6 +1769,7 @@ mkdirSync(outputDir, {recursive: true});
 mkdirSync(visibleOutputDir, {recursive: true});
 
 console.log(`애드센스 사이트 ${site}번 임시글 생성 시작`);
+if (maxDrafts > 0) console.log(`임시글 목표: 현재 ${existingOnWordPress.draftCount}개 / 최대 ${maxDrafts}개`);
 console.log(`제목 파일: ${titlesPath}`);
 console.log(`제목 ${titles.length}개 선택 / 전체 ${allTitleEntries.length}개 / 이전 성공 ${previousDraftHistory.length}개 자동 제외 / 모델 ${model} / 본문 ${minChars}자 이상 목표`);
 if (limit > 0) {
@@ -2084,3 +2098,4 @@ if (process.stdout.isTTY) process.stdout.write("");
 // 예전에는 건너뛴 게 하나만 있어도 종료코드 1 이 되었고, 여러 사이트를 도는 스크립트가
 // 그걸 실패로 읽어 사이트2 부터는 아예 실행하지 않고 조용히 끝났다.
 if (failedCount > 0) process.exitCode = 1;
+

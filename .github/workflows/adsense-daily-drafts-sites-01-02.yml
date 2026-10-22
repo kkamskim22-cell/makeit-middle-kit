@@ -1,4 +1,4 @@
-name: 사이트 1·2 매일 임시글 생성
+name: 사이트 1 매일 임시글 생성
 
 on:
   schedule:
@@ -11,7 +11,7 @@ permissions:
 
 # 같은 예약이 겹쳐도 한 번만 실행합니다.
 concurrency:
-  group: adsense-daily-drafts-sites-01-02
+  group: adsense-daily-drafts-site-01
   cancel-in-progress: false
 
 jobs:
@@ -47,18 +47,6 @@ jobs:
           ADSENSE_SITE_01_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_01_APP_PASSWORD }}
         run: npm run adsense:create-drafts -- --site=1 --limit=1 --date-mode=now
 
-      - name: 사이트 2 임시글 1개 생성
-        id: site_2
-        continue-on-error: true
-        working-directory: 99_절대_건들지마세요_프로그램파일
-        env:
-          MAKEIT_MIDDLE_LICENSE: ${{ secrets.MAKEIT_MIDDLE_LICENSE }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ADSENSE_SITE_02_URL: ${{ secrets.ADSENSE_SITE_02_URL }}
-          ADSENSE_SITE_02_USER: ${{ secrets.ADSENSE_SITE_02_USER }}
-          ADSENSE_SITE_02_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_02_APP_PASSWORD }}
-        run: npm run adsense:create-drafts -- --site=2 --limit=1 --date-mode=now
-
       - name: 작성 기록 안전 저장
         if: always()
         working-directory: 99_절대_건들지마세요_프로그램파일
@@ -67,7 +55,7 @@ jobs:
       - name: 자동화 결과 확인
         if: always()
         run: |
-          if [ "${{ steps.site_1.outcome }}" != "success" ] || [ "${{ steps.site_2.outcome }}" != "success" ]; then
-            echo "사이트 1 또는 사이트 2 생성 단계에서 확인이 필요한 오류가 발생했습니다."
+          if [ "${{ steps.site_1.outcome }}" != "success" ]; then
+            echo "사이트 1 생성 단계에서 확인이 필요한 오류가 발생했습니다."
             exit 1
           fi

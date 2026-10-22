@@ -220,6 +220,10 @@ function isNumberedTitleLine(line) {
 function isIgnoredLine(line) {
   const value = line.replace(/^\uFEFF/, "").trim();
   if (!value || value.startsWith("#")) return true;
+  if (/^=+$/.test(value)) return true;
+  if (/^\[(?:기본\s*정보|전체\s*제목\s*데이터\s*(?:시작|끝)|작성\s*가이드)\]$/.test(value)) return true;
+  if (/^애드센스\s*승인\s*블로그\s*주제\s*추천\s*결과$/.test(value)) return true;
+  if (/^(?:워드프레스\s*사이트|선택한\s*대주제\s*\d+|선택한\s*중주제|메인\s*키워드)\s*:/.test(value)) return true;
   if (/^_{5,}$/.test(value)) return true;
   if (/^\[\d+\s*\/\s*\d+\]\s*카테고리/.test(value)) return true;
   if (/^카테고리\s*\d+\s*:/.test(value)) return true;
@@ -291,6 +295,7 @@ export function parseStructuredTitleCatalog(text) {
   const warnings = [];
   let currentParent = null;
   let currentChild = null;
+  let titleDataEnded = false;
 
   function finishChild() {
     if (!currentChild || !currentParent) return;
@@ -315,6 +320,13 @@ export function parseStructuredTitleCatalog(text) {
   rawLines.forEach((rawLine, index) => {
     const line = rawLine.replace(/^\uFEFF/, "").trim();
     const lineNumber = index + 1;
+
+    if (/^\[전체\s*제목\s*데이터\s*끝\]$/.test(line)) {
+      finishParent();
+      titleDataEnded = true;
+      return;
+    }
+    if (titleDataEnded) return;
 
     if (!line) {
       if (currentChild && currentChild.phase === "description" && currentChild.descriptionLines.length > 0) {
@@ -571,3 +583,4 @@ export function resolveTitleFile(projectRoot, siteNumber, explicitPath = "") {
     ].join("\n"),
   );
 }
+

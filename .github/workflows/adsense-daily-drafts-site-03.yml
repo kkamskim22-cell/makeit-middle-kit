@@ -1,0 +1,45 @@
+name: 사이트 3 임시글 자동 생성
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: adsense-daily-drafts-site-03
+  cancel-in-progress: false
+
+jobs:
+  create-drafts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 저장소 가져오기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Node.js 준비
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 99_절대_건들지마세요_프로그램파일/package-lock.json
+      - name: 프로그램 설치
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        run: npm ci
+      - name: 사이트 3 임시글 3개 생성
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        env:
+          MAKEIT_MIDDLE_LICENSE: ${{ secrets.MAKEIT_MIDDLE_LICENSE }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ADSENSE_SITE_03_URL: ${{ secrets.ADSENSE_SITE_03_URL }}
+          ADSENSE_SITE_03_USER: ${{ secrets.ADSENSE_SITE_03_USER }}
+          ADSENSE_SITE_03_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_03_APP_PASSWORD }}
+        run: npm run adsense:create-drafts -- --site=3 --limit=3 --child-category-cycle=3 --max-drafts=100 --date-mode=now
+      - name: 작성 기록 안전 저장
+        if: always()
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        run: npm run save
+

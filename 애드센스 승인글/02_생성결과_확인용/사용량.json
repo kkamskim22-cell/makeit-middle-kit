@@ -3,12 +3,12 @@
   "설명": "이 키트가 OpenAI 를 쓴 기록. 글마다 한 줄. 지우면 '남은 돈' 계산이 처음부터 다시 시작됩니다.",
   "시작일": "2026-10-13T14:57:09.435Z",
   "합계": {
-    "글수": 1,
-    "input_tokens": 1051,
-    "output_tokens": 3700,
-    "total_tokens": 4751,
-    "usd": 0.023438,
-    "krw": 36.2
+    "글수": 4,
+    "input_tokens": 9122,
+    "output_tokens": 16559,
+    "total_tokens": 25681,
+    "usd": 0.105357,
+    "krw": 162.7
   },
   "글": [
     {
@@ -21,6 +21,39 @@
       "total_tokens": 4751,
       "usd": 0.023438,
       "krw": 36.2
+    },
+    {
+      "때": "2026-10-28T23:25:18.234Z",
+      "site": 2,
+      "title": "고령사회에서 문화센터 강좌를 선택하는 기준이 세대별로 다른 이유",
+      "model": "gpt-5.4-mini",
+      "input_tokens": 3489,
+      "output_tokens": 4362,
+      "total_tokens": 7851,
+      "usd": 0.028246,
+      "krw": 43.6
+    },
+    {
+      "때": "2026-10-28T23:25:51.424Z",
+      "site": 2,
+      "title": "세대 통합형 주민 프로그램을 기획할 때 고려할 생활환경 차이",
+      "model": "gpt-5.4-mini",
+      "input_tokens": 1056,
+      "output_tokens": 4258,
+      "total_tokens": 5314,
+      "usd": 0.025953,
+      "krw": 40.1
+    },
+    {
+      "때": "2026-10-28T23:26:25.843Z",
+      "site": 2,
+      "title": "고령 주민과 청년 주민이 함께 사용하는 휴게공간의 특징",
+      "model": "gpt-5.4-mini",
+      "input_tokens": 3526,
+      "output_tokens": 4239,
+      "total_tokens": 7765,
+      "usd": 0.02772,
+      "krw": 42.8
     }
   ]
 }

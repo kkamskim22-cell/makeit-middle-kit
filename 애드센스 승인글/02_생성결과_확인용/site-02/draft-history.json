@@ -1,0 +1,47 @@
+[
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 문화센터 강좌를 선택하는 기준이 세대별로 다른 이유",
+    "postId": 4192,
+    "status": "draft",
+    "slug": "why-course-choices-differ-by-generation",
+    "categoryId": 57,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      57
+    ],
+    "createdAt": "2026-10-28T23:26:25.845Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대 통합형 주민 프로그램을 기획할 때 고려할 생활환경 차이",
+    "postId": 4194,
+    "status": "draft",
+    "slug": "living-environment-differences-for-community-programs",
+    "categoryId": 17,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      17
+    ],
+    "createdAt": "2026-10-28T23:26:25.845Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령 주민과 청년 주민이 함께 사용하는 휴게공간의 특징",
+    "postId": 4196,
+    "status": "draft",
+    "slug": "shared-rest-space-for-all-ages",
+    "categoryId": 63,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      63
+    ],
+    "createdAt": "2026-10-28T23:26:25.845Z"
+  }
+]

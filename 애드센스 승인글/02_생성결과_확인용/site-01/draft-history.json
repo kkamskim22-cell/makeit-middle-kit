@@ -12,6 +12,21 @@
       5,
       8
     ],
-    "createdAt": "2026-10-13T14:57:09.438Z"
+    "createdAt": "2026-10-28T23:26:54.044Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "불확실한 정보를 메모할 때 확인 전 표시를 남기는 규칙",
+    "postId": 2226,
+    "status": "draft",
+    "slug": "mark-uncertain-information-before-verification",
+    "categoryId": 6,
+    "parentCategoryId": 5,
+    "categoryIds": [
+      5,
+      6
+    ],
+    "createdAt": "2026-10-28T23:27:25.895Z"
   }
 ]

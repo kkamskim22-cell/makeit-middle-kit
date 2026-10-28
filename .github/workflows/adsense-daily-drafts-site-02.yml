@@ -11,7 +11,7 @@ permissions:
 
 # 같은 예약이 겹쳐도 한 번만 실행합니다.
 concurrency:
-  group: adsense-daily-drafts-site-02
+  group: adsense-drafts-write-queue
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +50,10 @@ jobs:
       - name: 작성 기록 안전 저장
         if: always()
         working-directory: 99_절대_건들지마세요_프로그램파일
-        run: npm run save
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm run save
 
       - name: 자동화 결과 확인
         if: always()

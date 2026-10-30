@@ -199,14 +199,49 @@ if (!hasOrigin) {
   process.exit(0);
 }
 
-try {
-  git(["push", "origin", branch], {stdio: ["ignore", "inherit", "inherit"]});
-  console.log("");
-  console.log("[OK] GitHub에 안전하게 저장됐습니다. 수고하셨어요!");
-} catch {
+// 작업 시작 뒤 원격 main이 바뀌면 push가 거절될 수 있다.
+// 강제 저장은 다른 실행의 기록을 덮어쓸 수 있으므로 절대 사용하지 않는다.
+// 대신 최신 원격 기록을 rebase로 합친 뒤 제한된 횟수만 다시 시도한다.
+const MAX_PUSH_ATTEMPTS = 3;
+let pushed = false;
+
+for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
+  try {
+    git(["push", "origin", branch]);
+    pushed = true;
+    break;
+  } catch (pushError) {
+    const detail = String(pushError && pushError.stderr ? pushError.stderr : pushError);
+    const isStaleBranch = /non-fast-forward|fetch first|rejected/i.test(detail);
+
+    if (!isStaleBranch || attempt === MAX_PUSH_ATTEMPTS) {
+      fail([
+        "GitHub에 올리는(push) 데 실패했어요. 인터넷 연결을 확인하고 다시 실행해주세요.",
+        "반복되면 위 오류 메시지를 복사해서 코덱스에게 붙여넣으면 원인을 찾아줍니다.",
+        "(커밋 자체는 완료되어 작업물이 사라지지는 않았습니다)",
+      ]);
+    }
+
+    try {
+      git(["fetch", "origin", branch]);
+      git(["rebase", `origin/${branch}`]);
+    } catch (rebaseError) {
+      gitQuiet(["rebase", "--abort"]);
+      fail([
+        "GitHub의 새 기록과 이번 기록이 같은 부분에서 겹쳐 자동으로 합치지 못했어요.",
+        "다른 기록을 덮어쓰지 않도록 저장을 멈췄습니다. 잠시 뒤 다시 실행해주세요.",
+        String(rebaseError && rebaseError.stderr ? rebaseError.stderr : rebaseError).trim(),
+      ]);
+    }
+  }
+}
+
+if (!pushed) {
   fail([
     "GitHub에 올리는(push) 데 실패했어요. 인터넷 연결을 확인하고 다시 실행해주세요.",
-    "반복되면 위 오류 메시지를 복사해서 코덱스에게 붙여넣으면 원인을 찾아줍니다.",
     "(커밋 자체는 완료되어 작업물이 사라지지는 않았습니다)",
   ]);
 }
+
+console.log("");
+console.log("[OK] GitHub에 안전하게 저장됐습니다. 수고하셨어요!");

@@ -57,7 +57,7 @@
       16,
       19
     ],
-    "createdAt": "2026-10-29T23:27:52.891Z"
+    "createdAt": "2026-10-30T23:24:53.821Z"
   },
   {
     "ok": true,
@@ -72,7 +72,7 @@
       20,
       59
     ],
-    "createdAt": "2026-10-29T23:27:52.891Z"
+    "createdAt": "2026-10-30T23:24:53.821Z"
   },
   {
     "ok": true,
@@ -87,6 +87,51 @@
       20,
       22
     ],
-    "createdAt": "2026-10-29T23:27:52.891Z"
+    "createdAt": "2026-10-30T23:24:53.821Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령층과 청년층이 함께 활용할 수 있는 온라인 협업 도구의 특징",
+    "postId": 4226,
+    "status": "draft",
+    "slug": "online-collaboration-tools-for-all-ages",
+    "categoryId": 60,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      60
+    ],
+    "createdAt": "2026-10-30T23:26:23.918Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 집 안의 물건을 버리거나 보관하는 판단 기준은 어떻게 다를까",
+    "postId": 4228,
+    "status": "draft",
+    "slug": "how-generations-keep-or-discard-items",
+    "categoryId": 61,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      61
+    ],
+    "createdAt": "2026-10-30T23:26:23.918Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모와 자녀가 서로 다른 기억을 가진 가족 사건을 이야기하는 방법",
+    "postId": 4230,
+    "status": "draft",
+    "slug": "family-conflict-different-memories",
+    "categoryId": 54,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      54
+    ],
+    "createdAt": "2026-10-30T23:26:23.918Z"
   }
 ]

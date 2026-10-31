@@ -35,7 +35,7 @@ jobs:
         working-directory: 99_절대_건들지마세요_프로그램파일
         run: npm ci
 
-      - name: 사이트 1 임시글 1개 생성
+      - name: 사이트 1 임시글 2개 생성
         id: site_1
         continue-on-error: true
         working-directory: 99_절대_건들지마세요_프로그램파일
@@ -45,7 +45,7 @@ jobs:
           ADSENSE_SITE_01_URL: ${{ secrets.ADSENSE_SITE_01_URL }}
           ADSENSE_SITE_01_USER: ${{ secrets.ADSENSE_SITE_01_USER }}
           ADSENSE_SITE_01_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_01_APP_PASSWORD }}
-        run: npm run adsense:create-drafts -- --site=1 --limit=1 --date-mode=now
+        run: npm run adsense:create-drafts -- --site=1 --limit=2 --date-mode=now --child-category-cycle=2
 
       - name: 작성 기록 안전 저장
         if: always()

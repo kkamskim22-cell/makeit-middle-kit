@@ -5,7 +5,7 @@
 // Private 저장소는 GitHub push protection(시크릿 스캐닝)이 무료 플랜에 적용되지 않으므로,
 // 이 스크립트가 키 유출을 막는 기술적 최후 방어선이다.
 import {execFileSync} from "node:child_process";
-import {existsSync, readFileSync} from "node:fs";
+import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import path from "node:path";
 import {PROJECT_ROOT, VALID_LICENSE_CODES, readEnvFile} from "./lib/env.mjs";
 
@@ -30,6 +30,53 @@ function gitQuiet(args) {
   } catch {
     return "";
   }
+}
+
+// 여러 사이트가 동시에 끝나면 두 파일만 함께 바뀐다. 진행표는 가장 먼저 저장된
+// 실행본을 보존하고, 사용량 원장은 두 실행의 글 행을 합쳐서 기록 누락을 막는다.
+const SHARED_PROGRESS_FILE = "애드센스 승인글/02_생성결과_확인용/지금_진행상황.md";
+const SHARED_USAGE_FILE = "애드센스 승인글/02_생성결과_확인용/사용량.json";
+
+function stageText(stage, filePath) {
+  try { return git(["show", `:${stage}:${filePath}`]); } catch { return ""; }
+}
+
+function usageRows(text) {
+  try { return JSON.parse(text).글 || []; } catch { return []; }
+}
+
+function mergeUsageConflict(filePath) {
+  const rows = [...usageRows(stageText(2, filePath)), ...usageRows(stageText(3, filePath))];
+  const unique = new Map();
+  for (const row of rows) {
+    const key = [row.때, row.site, row.title, row.total_tokens, row.usd].join("\u0000");
+    unique.set(key, row);
+  }
+  const 글 = [...unique.values()].sort((a, b) => String(a.때 || "").localeCompare(String(b.때 || "")));
+  const 합계 = 글.reduce((sum, row) => ({
+    글수: sum.글수 + 1,
+    input_tokens: sum.input_tokens + Number(row.input_tokens || 0),
+    output_tokens: sum.output_tokens + Number(row.output_tokens || 0),
+    total_tokens: sum.total_tokens + Number(row.total_tokens || 0),
+    usd: sum.usd + Number(row.usd || 0),
+    krw: sum.krw + Number(row.krw || 0),
+  }), {글수: 0, input_tokens: 0, output_tokens: 0, total_tokens: 0, usd: 0, krw: 0});
+  합계.usd = Number(합계.usd.toFixed(6));
+  합계.krw = Number(합계.krw.toFixed(1));
+  writeFileSync(path.join(PROJECT_ROOT, filePath), JSON.stringify({버전: 1, 설명: "이 키트가 OpenAI 를 쓴 기록. 글마다 한 줄. 지우면 '남은 돈' 계산이 처음부터 다시 시작됩니다.", 시작일: 글[0]?.때 || "", 합계, 글}, null, 2), "utf8");
+  git(["add", "--", filePath]);
+}
+
+function resolveSharedRecordConflicts() {
+  const files = gitQuiet(["diff", "--name-only", "--diff-filter=U"]).split("\n").filter(Boolean);
+  if (files.length === 0 || files.some((file) => file !== SHARED_PROGRESS_FILE && file !== SHARED_USAGE_FILE)) return false;
+  for (const file of files) {
+    if (file === SHARED_PROGRESS_FILE) git(["checkout", "--ours", "--", file]);
+    if (file === SHARED_USAGE_FILE) mergeUsageConflict(file);
+    if (file === SHARED_PROGRESS_FILE) git(["add", "--", file]);
+  }
+  git(["-c", "core.editor=true", "rebase", "--continue"]);
+  return true;
 }
 
 function fail(lines) {
@@ -226,6 +273,11 @@ for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
       git(["fetch", "origin", branch]);
       git(["rebase", `origin/${branch}`]);
     } catch (rebaseError) {
+      try {
+        if (resolveSharedRecordConflicts()) continue;
+      } catch (mergeError) {
+        rebaseError = mergeError;
+      }
       gitQuiet(["rebase", "--abort"]);
       fail([
         "GitHub의 새 기록과 이번 기록이 같은 부분에서 겹쳐 자동으로 합치지 못했어요.",

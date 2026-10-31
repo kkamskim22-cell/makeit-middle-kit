@@ -1,9 +1,9 @@
-name: 사이트 2 매일 임시글 3개 생성
+name: 사이트 2 매일 임시글 생성
 
 on:
   schedule:
-    # GitHub Actions cron은 UTC 기준입니다. 23:00 UTC = 다음 날 08:00 Asia/Seoul.
-    - cron: "0 23 * * *"
+    # GitHub Actions cron은 UTC 기준입니다. 00:30 UTC = 09:30 Asia/Seoul.
+    - cron: "30 0 * * *"
 
 # 작성 기록만 안전하게 저장하기 위한 최소 권한입니다.
 permissions:
@@ -35,7 +35,16 @@ jobs:
         working-directory: 99_절대_건들지마세요_프로그램파일
         run: npm ci
 
-      - name: 사이트 2 임시글 3개 생성
+      - name: 사이트 2 일일 생성 개수 결정
+        shell: bash
+        run: |
+          if [ "$(TZ=Asia/Seoul date +%F)" \< "2026-11-07" ]; then
+            echo "DRAFT_LIMIT=1" >> "$GITHUB_ENV"
+          else
+            echo "DRAFT_LIMIT=2" >> "$GITHUB_ENV"
+          fi
+
+      - name: 사이트 2 임시글 생성
         id: site_2
         continue-on-error: true
         working-directory: 99_절대_건들지마세요_프로그램파일
@@ -45,7 +54,7 @@ jobs:
           ADSENSE_SITE_02_URL: ${{ secrets.ADSENSE_SITE_02_URL }}
           ADSENSE_SITE_02_USER: ${{ secrets.ADSENSE_SITE_02_USER }}
           ADSENSE_SITE_02_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_02_APP_PASSWORD }}
-        run: npm run adsense:create-drafts -- --site=2 --limit=3 --date-mode=now --child-category-cycle=3
+        run: npm run adsense:create-drafts -- --site=2 --limit="${DRAFT_LIMIT}" --date-mode=now --child-category-cycle="${DRAFT_LIMIT}"
 
       - name: 작성 기록 안전 저장
         if: always()

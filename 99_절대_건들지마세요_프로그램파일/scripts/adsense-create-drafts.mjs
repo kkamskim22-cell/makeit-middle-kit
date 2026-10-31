@@ -809,7 +809,7 @@ async function fetchAllPostTitles({siteUrl, username, appPassword}) {
 
 async function findExistingPostByTitle({siteUrl, username, appPassword, title}) {
   const credentials = wordpressCredentials(username, appPassword);
-  const url = `${wordpressBaseUrl(siteUrl)}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish&search=${encodeURIComponent(title)}&per_page=50&_fields=id,title,status`;
+  const url = `${wordpressBaseUrl(siteUrl)}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish,private&search=${encodeURIComponent(title)}&per_page=50&_fields=id,title,status`;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const response = await wpFetch(url, {
@@ -828,8 +828,7 @@ async function findExistingPostByTitle({siteUrl, username, appPassword, title}) 
     } catch (error) {
       if (attempt === 3) {
         const message = error instanceof Error ? error.message : String(error);
-        console.log(`  (주의: 중복 확인 실패 - ${message} / 중복 확인 없이 발행을 진행함)`);
-        return null;
+        throw new Error(`중복 확인 실패: ${message} / 안전을 위해 이번 실행을 중단합니다.`);
       }
       await new Promise((resolve) => setTimeout(resolve, 1500 * attempt));
     }
@@ -1714,11 +1713,11 @@ if (!includeUsedTitles) {
   if (existingOnWordPress.complete) {
     console.log(`워드프레스에 이미 있는 글 ${existingOnWordPress.titles.length}개 확인 — 같은 제목은 빼고 진행합니다.`);
   } else {
-    console.log(`(주의: 워드프레스 글 목록을 다 못 읽었어요 - ${existingOnWordPress.reason} / 글마다 발행 직전에 다시 확인합니다)`);
+    console.log(`(주의: 워드프레스 글 목록을 다 못 읽었어요 - ${existingOnWordPress.reason} / 안전을 위해 생성하지 않습니다)`);
   }
 }
-if (maxDrafts > 0 && !existingOnWordPress.complete) {
-  console.error(`임시글 ${maxDrafts}개 제한을 안전하게 확인하지 못해 이번 실행을 멈춥니다.`);
+if (!includeUsedTitles && !existingOnWordPress.complete) {
+  console.error(`워드프레스 글 목록을 안전하게 확인하지 못해 이번 실행을 멈춥니다. ${existingOnWordPress.reason}`);
   process.exit(1);
 }
 const remainingDraftSlots = maxDrafts > 0 ? Math.max(0, maxDrafts - Number(existingOnWordPress.draftCount || 0)) : Infinity;
@@ -2009,6 +2008,10 @@ for (let index = 0; index < titles.length; index += 1) {
     results.push({site, title, ok: false, error: message});
     console.log(`  실패: ${message}`);
     if (진행) 진행.글실패();
+    if (message.startsWith("중복 확인 실패:")) {
+      process.exitCode = 1;
+      break;
+    }
   }
 }
 if (진행) 진행.끝(results.filter((item) => item.ok && !item.skipped).length > 0 ? "다 됐어요 ✅" : "끝 (새로 만든 글 없음)");

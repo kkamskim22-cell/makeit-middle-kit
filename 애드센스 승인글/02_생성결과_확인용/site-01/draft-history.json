@@ -27,6 +27,36 @@
       5,
       6
     ],
-    "createdAt": "2026-10-28T23:27:25.895Z"
+    "createdAt": "2026-10-31T23:26:16.320Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "서로 다른 메모에서 공통으로 등장하는 문제를 찾는 방법",
+    "postId": 2240,
+    "status": "draft",
+    "slug": "find-common-issues-across-notes-2",
+    "categoryId": 11,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      11
+    ],
+    "createdAt": "2026-10-31T23:27:18.169Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "감정이 섞인 생각을 관찰한 사실과 느낌으로 나누어 쓰기",
+    "postId": 2242,
+    "status": "draft",
+    "slug": "separate-facts-from-feelings",
+    "categoryId": 7,
+    "parentCategoryId": 5,
+    "categoryIds": [
+      5,
+      7
+    ],
+    "createdAt": "2026-10-31T23:27:18.169Z"
   }
 ]

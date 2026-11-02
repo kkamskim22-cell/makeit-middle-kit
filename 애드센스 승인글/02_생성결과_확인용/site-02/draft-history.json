@@ -102,7 +102,7 @@
       20,
       60
     ],
-    "createdAt": "2026-10-30T23:26:23.918Z"
+    "createdAt": "2026-11-02T01:38:11.362Z"
   },
   {
     "ok": true,
@@ -117,7 +117,7 @@
       4,
       61
     ],
-    "createdAt": "2026-10-30T23:26:23.918Z"
+    "createdAt": "2026-11-02T01:38:11.362Z"
   },
   {
     "ok": true,
@@ -132,6 +132,21 @@
       4,
       54
     ],
-    "createdAt": "2026-10-30T23:26:23.918Z"
+    "createdAt": "2026-11-02T01:38:11.362Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모가 새로운 가전제품을 선택할 때 성인 자녀의 의견이 활용되는 과정",
+    "postId": 4234,
+    "status": "draft",
+    "slug": "adult-children-influence-home-appliance-choice",
+    "categoryId": 9,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      9
+    ],
+    "createdAt": "2026-11-02T01:38:42.417Z"
   }
 ]

@@ -102,7 +102,7 @@
       13,
       16
     ],
-    "createdAt": "2026-11-02T23:30:39.719Z"
+    "createdAt": "2026-11-03T23:32:02.724Z"
   },
   {
     "ok": true,
@@ -117,6 +117,36 @@
       9,
       12
     ],
-    "createdAt": "2026-11-02T23:30:39.719Z"
+    "createdAt": "2026-11-03T23:32:02.724Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "하나의 메모에 태그를 여러 개 붙여야 하는 경우 판단하기",
+    "postId": 2514,
+    "status": "draft",
+    "slug": "decide-when-to-use-multiple-tags",
+    "categoryId": 10,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      10
+    ],
+    "createdAt": "2026-11-03T23:33:14.767Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "원인과 결과 관계에 있는 메모를 연결하는 기록 방식",
+    "postId": 2516,
+    "status": "draft",
+    "slug": "cause-and-effect-note-linking-method",
+    "categoryId": 11,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      11
+    ],
+    "createdAt": "2026-11-03T23:33:14.767Z"
   }
 ]

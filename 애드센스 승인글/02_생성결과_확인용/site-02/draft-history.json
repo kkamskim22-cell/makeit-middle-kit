@@ -147,6 +147,21 @@
       8,
       9
     ],
-    "createdAt": "2026-11-02T01:38:42.417Z"
+    "createdAt": "2026-11-03T01:33:59.821Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "손자녀가 조부모에게 요즘 학교의 동아리 문화를 설명하는 방법",
+    "postId": 4348,
+    "status": "draft",
+    "slug": "explaining-school-clubs-to-grandparents",
+    "categoryId": 10,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      10
+    ],
+    "createdAt": "2026-11-03T01:34:34.037Z"
   }
 ]

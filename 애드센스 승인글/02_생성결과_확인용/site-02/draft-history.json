@@ -162,6 +162,21 @@
       8,
       10
     ],
-    "createdAt": "2026-11-03T01:34:34.037Z"
+    "createdAt": "2026-11-04T01:32:23.860Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 미래 가족의 연락 방식이 달라질 가능성",
+    "postId": 4362,
+    "status": "draft",
+    "slug": "future-family-communication-changes-2",
+    "categoryId": 59,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      59
+    ],
+    "createdAt": "2026-11-04T01:32:59.587Z"
   }
 ]

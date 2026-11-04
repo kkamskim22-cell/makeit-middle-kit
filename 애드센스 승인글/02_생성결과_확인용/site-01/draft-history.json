@@ -132,7 +132,7 @@
       9,
       10
     ],
-    "createdAt": "2026-11-03T23:33:14.767Z"
+    "createdAt": "2026-11-04T23:36:27.423Z"
   },
   {
     "ok": true,
@@ -147,6 +147,36 @@
       9,
       11
     ],
-    "createdAt": "2026-11-03T23:33:14.767Z"
+    "createdAt": "2026-11-04T23:36:27.423Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "독자가 궁금해할 질문을 메모에서 찾아 글 제목 만들기",
+    "postId": 2525,
+    "status": "draft",
+    "slug": "find-reader-questions-for-title-ideas",
+    "categoryId": 20,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      20
+    ],
+    "createdAt": "2026-11-04T23:37:40.279Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "문제의 원인을 추측과 확인된 사실로 나누어 기록하기",
+    "postId": 2527,
+    "status": "draft",
+    "slug": "separate-assumptions-from-facts",
+    "categoryId": 19,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      19
+    ],
+    "createdAt": "2026-11-04T23:37:40.279Z"
   }
 ]

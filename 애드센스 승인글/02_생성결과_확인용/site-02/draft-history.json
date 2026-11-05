@@ -177,6 +177,21 @@
       20,
       59
     ],
-    "createdAt": "2026-11-04T01:32:59.587Z"
+    "createdAt": "2026-11-05T01:39:02.940Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모와 성인 자녀가 함께 집안의 오래된 가전제품을 교체하는 과정",
+    "postId": 4366,
+    "status": "draft",
+    "slug": "replacing-old-home-appliances-together",
+    "categoryId": 11,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      11
+    ],
+    "createdAt": "2026-11-05T01:39:47.679Z"
   }
 ]

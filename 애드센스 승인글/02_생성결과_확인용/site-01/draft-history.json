@@ -162,7 +162,7 @@
       17,
       20
     ],
-    "createdAt": "2026-11-04T23:37:40.279Z"
+    "createdAt": "2026-11-05T23:37:45.851Z"
   },
   {
     "ok": true,
@@ -177,6 +177,36 @@
       17,
       19
     ],
-    "createdAt": "2026-11-04T23:37:40.279Z"
+    "createdAt": "2026-11-05T23:37:45.851Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "하나의 아이디어에서 서로 다른 사용자 관점을 찾아내는 방법",
+    "postId": 2529,
+    "status": "draft",
+    "slug": "find-different-user-perspectives",
+    "categoryId": 18,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      18
+    ],
+    "createdAt": "2026-11-05T23:38:52.411Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "종이 노트를 여러 권 사용할 때 역할을 구분하는 기준",
+    "postId": 2531,
+    "status": "draft",
+    "slug": "how-to-separate-notebook-roles",
+    "categoryId": 23,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      23
+    ],
+    "createdAt": "2026-11-05T23:38:52.411Z"
   }
 ]

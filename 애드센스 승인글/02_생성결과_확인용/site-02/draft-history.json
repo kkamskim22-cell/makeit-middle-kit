@@ -192,6 +192,21 @@
       8,
       11
     ],
-    "createdAt": "2026-11-05T01:39:47.679Z"
+    "createdAt": "2026-11-06T01:40:45.678Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "은퇴 후 직장 동료와의 연락을 이어가는 방식이 달라지는 이유",
+    "postId": 4370,
+    "status": "draft",
+    "slug": "changing-ways-to-stay-in-touch-after-retirement",
+    "categoryId": 56,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      56
+    ],
+    "createdAt": "2026-11-06T01:41:31.796Z"
   }
 ]

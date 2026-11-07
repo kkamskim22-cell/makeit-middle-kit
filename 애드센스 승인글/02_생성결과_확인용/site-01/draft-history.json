@@ -222,7 +222,7 @@
       21,
       22
     ],
-    "createdAt": "2026-11-06T23:30:37.363Z"
+    "createdAt": "2026-11-07T23:27:58.483Z"
   },
   {
     "ok": true,
@@ -237,6 +237,36 @@
       21,
       24
     ],
-    "createdAt": "2026-11-06T23:30:37.363Z"
+    "createdAt": "2026-11-07T23:27:58.483Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "서로 모순되는 생각 두 개를 메모장에 함께 정리하는 방법",
+    "postId": 2540,
+    "status": "draft",
+    "slug": "how-to-organize-conflicting-thoughts",
+    "categoryId": 7,
+    "parentCategoryId": 5,
+    "categoryIds": [
+      5,
+      7
+    ],
+    "createdAt": "2026-11-07T23:29:17.273Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "독서 중 모르는 용어를 문맥과 함께 정리하는 메모 양식",
+    "postId": 2542,
+    "status": "draft",
+    "slug": "reading-term-context-note-template",
+    "categoryId": 15,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      15
+    ],
+    "createdAt": "2026-11-07T23:29:17.273Z"
   }
 ]

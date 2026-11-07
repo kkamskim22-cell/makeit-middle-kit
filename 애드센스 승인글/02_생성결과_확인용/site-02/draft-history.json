@@ -207,6 +207,36 @@
       55,
       56
     ],
-    "createdAt": "2026-11-06T01:41:31.796Z"
+    "createdAt": "2026-11-07T01:29:01.037Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 스마트폰 알림 설정 습관이 달라지는 생활상의 이유",
+    "postId": 4375,
+    "status": "draft",
+    "slug": "generation-differences-phone-notification-habits",
+    "categoryId": 62,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      62
+    ],
+    "createdAt": "2026-11-07T01:30:13.076Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 정기구독 서비스 이용에 대한 인식이 달라지는 배경",
+    "postId": 4377,
+    "status": "draft",
+    "slug": "generational-perceptions-subscription-services",
+    "categoryId": 57,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      57
+    ],
+    "createdAt": "2026-11-07T01:30:13.076Z"
   }
 ]

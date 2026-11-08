@@ -222,7 +222,7 @@
       55,
       62
     ],
-    "createdAt": "2026-11-07T01:30:13.076Z"
+    "createdAt": "2026-11-08T01:37:58.633Z"
   },
   {
     "ok": true,
@@ -237,6 +237,36 @@
       55,
       57
     ],
-    "createdAt": "2026-11-07T01:30:13.076Z"
+    "createdAt": "2026-11-08T01:37:58.633Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "마을 공동작업이 세대 간 대화의 기회가 되는 과정",
+    "postId": 4379,
+    "status": "draft",
+    "slug": "community-work-connects-generations",
+    "categoryId": 17,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      17
+    ],
+    "createdAt": "2026-11-08T01:39:14.961Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 이동 습관을 고려한 주거단지 보행환경의 구성 요소",
+    "postId": 4381,
+    "status": "draft",
+    "slug": "residential-pedestrian-environment-elements",
+    "categoryId": 63,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      63
+    ],
+    "createdAt": "2026-11-08T01:39:14.961Z"
   }
 ]

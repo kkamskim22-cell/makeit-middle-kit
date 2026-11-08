@@ -252,7 +252,7 @@
       5,
       7
     ],
-    "createdAt": "2026-11-07T23:29:17.273Z"
+    "createdAt": "2026-11-08T23:28:06.401Z"
   },
   {
     "ok": true,
@@ -267,6 +267,36 @@
       13,
       15
     ],
-    "createdAt": "2026-11-07T23:29:17.273Z"
+    "createdAt": "2026-11-08T23:28:06.401Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "반복해서 잊는 집안일을 상황별 기록으로 관리하는 방법",
+    "postId": 2544,
+    "status": "draft",
+    "slug": "manage-chores-with-situation-notes",
+    "categoryId": 14,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      14
+    ],
+    "createdAt": "2026-11-08T23:29:24.074Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "전화 통화 후 확인해야 할 내용을 정리하는 업무 메모 양식",
+    "postId": 2546,
+    "status": "draft",
+    "slug": "call-follow-up-checklist-memo-template",
+    "categoryId": 16,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      16
+    ],
+    "createdAt": "2026-11-08T23:29:24.074Z"
   }
 ]

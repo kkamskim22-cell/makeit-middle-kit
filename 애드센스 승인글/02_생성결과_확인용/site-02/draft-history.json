@@ -252,7 +252,7 @@
       16,
       17
     ],
-    "createdAt": "2026-11-08T01:39:14.961Z"
+    "createdAt": "2026-11-09T01:41:15.527Z"
   },
   {
     "ok": true,
@@ -267,6 +267,36 @@
       16,
       63
     ],
-    "createdAt": "2026-11-08T01:39:14.961Z"
+    "createdAt": "2026-11-09T01:41:15.527Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령 주민과 청년 주민이 기억하는 동네 풍경의 차이",
+    "postId": 4383,
+    "status": "draft",
+    "slug": "generational-differences-in-neighborhood-memory",
+    "categoryId": 19,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      19
+    ],
+    "createdAt": "2026-11-09T01:42:25.452Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 디지털 기록 습관이 가족의 추억 보관 방식에 미치는 영향",
+    "postId": 4385,
+    "status": "draft",
+    "slug": "digital-memory-habits-by-generation",
+    "categoryId": 59,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      59
+    ],
+    "createdAt": "2026-11-09T01:42:25.452Z"
   }
 ]

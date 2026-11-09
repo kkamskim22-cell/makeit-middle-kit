@@ -282,7 +282,7 @@
       13,
       14
     ],
-    "createdAt": "2026-11-08T23:29:24.074Z"
+    "createdAt": "2026-11-09T23:31:45.426Z"
   },
   {
     "ok": true,
@@ -297,6 +297,36 @@
       13,
       16
     ],
-    "createdAt": "2026-11-08T23:29:24.074Z"
+    "createdAt": "2026-11-09T23:31:45.426Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "메모를 다시 읽다가 발견한 잘못된 정보를 수정하는 방법",
+    "postId": 2548,
+    "status": "draft",
+    "slug": "how-to-correct-wrong-information",
+    "categoryId": 12,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      12
+    ],
+    "createdAt": "2026-11-09T23:33:22.757Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "업무 메모를 프로젝트별로 나눌지 작업 유형별로 나눌지 비교하기",
+    "postId": 2550,
+    "status": "draft",
+    "slug": "compare-project-vs-task-based-notes",
+    "categoryId": 10,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      10
+    ],
+    "createdAt": "2026-11-09T23:33:22.757Z"
   }
 ]

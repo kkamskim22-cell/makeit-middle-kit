@@ -282,7 +282,7 @@
       16,
       19
     ],
-    "createdAt": "2026-11-09T01:42:25.452Z"
+    "createdAt": "2026-11-10T01:32:22.501Z"
   },
   {
     "ok": true,
@@ -297,6 +297,36 @@
       20,
       59
     ],
-    "createdAt": "2026-11-09T01:42:25.452Z"
+    "createdAt": "2026-11-10T01:32:22.501Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "서로 다른 세대가 함께 운영하는 지역 학습모임의 구성 방식",
+    "postId": 4394,
+    "status": "draft",
+    "slug": "intergenerational-community-study-group-structure",
+    "categoryId": 22,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      22
+    ],
+    "createdAt": "2026-11-10T01:33:37.114Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "생활 속 자동화 기술이 가족 구성원의 역할 분담에 미칠 영향",
+    "postId": 4396,
+    "status": "draft",
+    "slug": "home-automation-family-role-sharing-impact",
+    "categoryId": 60,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      60
+    ],
+    "createdAt": "2026-11-10T01:33:37.114Z"
   }
 ]

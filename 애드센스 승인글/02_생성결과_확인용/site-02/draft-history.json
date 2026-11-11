@@ -312,7 +312,7 @@
       20,
       22
     ],
-    "createdAt": "2026-11-10T01:33:37.114Z"
+    "createdAt": "2026-11-11T01:32:09.166Z"
   },
   {
     "ok": true,
@@ -327,6 +327,36 @@
       20,
       60
     ],
-    "createdAt": "2026-11-10T01:33:37.114Z"
+    "createdAt": "2026-11-11T01:32:09.166Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족의 오래된 물건을 보존하거나 정리하는 기준의 차이",
+    "postId": 4401,
+    "status": "draft",
+    "slug": "criteria-for-keeping-or-clearing-family-heirlooms",
+    "categoryId": 5,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      5
+    ],
+    "createdAt": "2026-11-11T01:33:29.284Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족사진을 공개하는 것에 대한 세대별 인식 차이",
+    "postId": 4403,
+    "status": "draft",
+    "slug": "generational-views-on-sharing-family-photos-in-an",
+    "categoryId": 61,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      61
+    ],
+    "createdAt": "2026-11-11T01:33:29.284Z"
   }
 ]

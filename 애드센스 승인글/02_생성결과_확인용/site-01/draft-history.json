@@ -312,7 +312,7 @@
       9,
       12
     ],
-    "createdAt": "2026-11-09T23:33:22.757Z"
+    "createdAt": "2026-11-11T23:42:15.964Z"
   },
   {
     "ok": true,
@@ -327,6 +327,36 @@
       9,
       10
     ],
-    "createdAt": "2026-11-09T23:33:22.757Z"
+    "createdAt": "2026-11-11T23:42:15.964Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "하나의 질문에 관련된 메모를 모아 답변 초안 만들기",
+    "postId": 2558,
+    "status": "draft",
+    "slug": "compile-notes-for-draft-answer",
+    "categoryId": 11,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      11
+    ],
+    "createdAt": "2026-11-11T23:43:24.923Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "서로 관련된 메모 세 개로 글의 목차를 구성하는 실습",
+    "postId": 2560,
+    "status": "draft",
+    "slug": "organize-article-outline-with-related-notes",
+    "categoryId": 20,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      20
+    ],
+    "createdAt": "2026-11-11T23:43:24.923Z"
   }
 ]

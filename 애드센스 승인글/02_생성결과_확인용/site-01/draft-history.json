@@ -342,7 +342,7 @@
       9,
       11
     ],
-    "createdAt": "2026-11-11T23:43:24.923Z"
+    "createdAt": "2026-11-13T03:09:54.920Z"
   },
   {
     "ok": true,
@@ -357,6 +357,36 @@
       17,
       20
     ],
-    "createdAt": "2026-11-11T23:43:24.923Z"
+    "createdAt": "2026-11-13T03:09:54.920Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "선택지가 세 개 이상일 때 판단 기준을 표로 만드는 방법",
+    "postId": 2563,
+    "status": "draft",
+    "slug": "how-to-create-decision-criteria-table",
+    "categoryId": 19,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      19
+    ],
+    "createdAt": "2026-11-13T03:11:02.729Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "떠오른 아이디어의 장점과 약점을 같은 표에 정리하기",
+    "postId": 2565,
+    "status": "draft",
+    "slug": "list-idea-pros-and-cons",
+    "categoryId": 18,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      18
+    ],
+    "createdAt": "2026-11-13T03:11:02.729Z"
   }
 ]

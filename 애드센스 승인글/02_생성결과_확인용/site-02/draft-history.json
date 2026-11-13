@@ -372,7 +372,7 @@
       4,
       54
     ],
-    "createdAt": "2026-11-12T01:45:07.264Z"
+    "createdAt": "2026-11-13T07:00:26.224Z"
   },
   {
     "ok": true,
@@ -387,6 +387,36 @@
       8,
       9
     ],
-    "createdAt": "2026-11-12T01:45:07.264Z"
+    "createdAt": "2026-11-13T07:00:26.224Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 조부모와 손자녀가 옛날 지도와 현재 지도를 비교하는 활동",
+    "postId": 4477,
+    "status": "draft",
+    "slug": "compare-old-and-modern-maps",
+    "categoryId": 10,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      10
+    ],
+    "createdAt": "2026-11-13T07:01:43.064Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족이 중요한 물건의 사용설명서를 공유하는 방법",
+    "postId": 4479,
+    "status": "draft",
+    "slug": "share-instruction-manuals-in-aging-society",
+    "categoryId": 11,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      11
+    ],
+    "createdAt": "2026-11-13T07:01:43.064Z"
   }
 ]

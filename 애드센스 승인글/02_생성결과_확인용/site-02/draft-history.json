@@ -402,7 +402,7 @@
       8,
       10
     ],
-    "createdAt": "2026-11-13T07:01:43.064Z"
+    "createdAt": "2026-11-14T06:50:10.167Z"
   },
   {
     "ok": true,
@@ -417,6 +417,36 @@
       8,
       11
     ],
-    "createdAt": "2026-11-13T07:01:43.064Z"
+    "createdAt": "2026-11-14T06:50:10.167Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 은퇴자가 자격증 공부를 시작하는 생활상의 배경",
+    "postId": 4517,
+    "status": "draft",
+    "slug": "retirees-study-certifications-aging-society",
+    "categoryId": 56,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      56
+    ],
+    "createdAt": "2026-11-14T06:51:15.265Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 디지털 회원증 사용이 일상적인 시설 이용에 미치는 변화",
+    "postId": 4519,
+    "status": "draft",
+    "slug": "digital-membership-changes-daily-facility-use",
+    "categoryId": 62,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      62
+    ],
+    "createdAt": "2026-11-14T06:51:15.265Z"
   }
 ]

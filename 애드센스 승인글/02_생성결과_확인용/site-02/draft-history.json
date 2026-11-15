@@ -432,7 +432,7 @@
       55,
       56
     ],
-    "createdAt": "2026-11-14T06:51:15.265Z"
+    "createdAt": "2026-11-15T06:54:23.328Z"
   },
   {
     "ok": true,
@@ -447,6 +447,36 @@
       55,
       62
     ],
-    "createdAt": "2026-11-14T06:51:15.265Z"
+    "createdAt": "2026-11-15T06:54:23.328Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 종이신문과 디지털 신문을 읽는 생활 습관의 차이",
+    "postId": 4521,
+    "status": "draft",
+    "slug": "paper-vs-digital-news-habits-in-aging-society",
+    "categoryId": 57,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      57
+    ],
+    "createdAt": "2026-11-15T06:55:28.201Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "지역 도서관에서 운영할 수 있는 세대 교류 활동의 유형",
+    "postId": 4523,
+    "status": "draft",
+    "slug": "types-of-intergenerational-library-programs",
+    "categoryId": 17,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      17
+    ],
+    "createdAt": "2026-11-15T06:55:28.201Z"
   }
 ]

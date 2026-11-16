@@ -38,6 +38,12 @@ jobs:
           ADSENSE_SITE_03_USER: ${{ secrets.ADSENSE_SITE_03_USER }}
           ADSENSE_SITE_03_APP_PASSWORD: ${{ secrets.ADSENSE_SITE_03_APP_PASSWORD }}
         run: npm run adsense:create-drafts -- --site=3 --limit=3 --child-category-cycle=3 --max-drafts=100 --date-mode=now
+      - name: Git 작성자 설정
+        if: always()
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: 작성 기록 안전 저장
         if: always()
         working-directory: 99_절대_건들지마세요_프로그램파일

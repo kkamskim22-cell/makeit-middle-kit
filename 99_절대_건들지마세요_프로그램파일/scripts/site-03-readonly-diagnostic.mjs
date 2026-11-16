@@ -16,8 +16,15 @@ export function titleKey(value) {
 
 export function compareTitles(titleEntries, wordpressTitles) {
   const wordpressKeys = new Set(wordpressTitles.map(titleKey).filter(Boolean));
-  const matchingCount = new Set(titleEntries.map((entry) => titleKey(typeof entry === "string" ? entry : entry?.title)).filter((key) => wordpressKeys.has(key))).size;
-  return {risk: matchingCount > 0 ? "감지됨" : "없음", matchingCount};
+  const titleKeys = new Set(titleEntries.map((entry) => titleKey(typeof entry === "string" ? entry : entry?.title)).filter(Boolean));
+  const matchingTitles = [...titleKeys].filter((key) => wordpressKeys.has(key)).length;
+  return {
+    status: "확정",
+    risk: matchingTitles > 0 ? "감지됨" : "없음",
+    totalTitles: titleKeys.size,
+    matchingTitles,
+    unwrittenTitles: titleKeys.size - matchingTitles,
+  };
 }
 
 export function safePostSummary(id, httpStatus, post) {
@@ -29,8 +36,8 @@ export function safePostSummary(id, httpStatus, post) {
   };
 }
 
-export function shouldRecommendResume(cloudwaysBlocked, duplicateRisk, posts) {
-  return !cloudwaysBlocked && duplicateRisk === "없음" && posts.every((post) => post.exists);
+export function shouldRecommendResume(cloudwaysBlocked, unwrittenTitles, posts) {
+  return !cloudwaysBlocked && Number(unwrittenTitles) > 0 && posts.every((post) => post.exists);
 }
 
 function baseUrl(value) {
@@ -55,24 +62,35 @@ async function getJson(url, authorization) {
   } catch {
     // 응답 본문은 출력하지 않는다. HTML 차단 페이지도 여기서 안전하게 처리한다.
   }
-  return {httpStatus, data, blocked: Boolean(response.blocked || response.challenged)};
+  const totalPages = Number(response.headers.get("x-wp-totalpages"));
+  return {
+    httpStatus,
+    data,
+    blocked: Boolean(response.blocked || response.challenged),
+    totalPages: Number.isInteger(totalPages) && totalPages >= 0 ? totalPages : null,
+  };
 }
 
 async function fetchAllTitles(url, authorization) {
   const titles = [];
+  let expectedPages = null;
   for (let page = 1; page <= 30; page += 1) {
     const result = await getJson(
       `${url}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish,private&per_page=100&page=${page}&orderby=id&order=asc&_fields=title`,
       authorization,
     );
-    // 마지막 페이지 다음의 400은 WordPress REST API의 정상 종료 신호다.
-    if (result.httpStatus === 400) return {ok: true, titles, blocked: result.blocked};
     if (result.httpStatus !== 200 || !Array.isArray(result.data)) return {ok: false, titles: [], blocked: result.blocked};
+    if (expectedPages === null) {
+      expectedPages = result.totalPages;
+      if (expectedPages === null || expectedPages > 30) return {ok: false, titles: [], blocked: result.blocked};
+    }
+    if (result.totalPages !== expectedPages) return {ok: false, titles: [], blocked: result.blocked};
     for (const post of result.data) {
       const title = String(post?.title?.raw || post?.title?.rendered || "").trim();
       if (title) titles.push(title);
     }
-    if (result.data.length < 100) return {ok: true, titles, blocked: result.blocked};
+    if (expectedPages === 0) return {ok: result.data.length === 0, titles, blocked: result.blocked};
+    if (page === expectedPages) return {ok: true, titles, blocked: result.blocked};
   }
   return {ok: false, titles: [], blocked: false};
 }
@@ -84,6 +102,7 @@ function failureSummary(connectionHttpStatus = null, posts = []) {
     connectionHttpStatus,
     cloudwaysBlockDetected: null,
     posts,
+    titleSummary: {status: "판정 불가", totalTitles: null, matchingTitles: null, unwrittenTitles: null},
     duplicateRisk: "판정 불가",
     automationResumeRecommended: false,
   };
@@ -126,8 +145,9 @@ export async function runDiagnostic(env = process.env) {
       connectionHttpStatus: connection.httpStatus,
       cloudwaysBlockDetected: blocked,
       posts,
+      titleSummary: comparison,
       duplicateRisk: comparison.risk,
-      automationResumeRecommended: shouldRecommendResume(blocked, comparison.risk, posts),
+      automationResumeRecommended: shouldRecommendResume(blocked, comparison.unwrittenTitles, posts),
     };
   } catch {
     return failureSummary(connection.httpStatus, posts);

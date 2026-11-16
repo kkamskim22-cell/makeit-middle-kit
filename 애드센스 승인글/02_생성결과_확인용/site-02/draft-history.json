@@ -462,7 +462,7 @@
       55,
       57
     ],
-    "createdAt": "2026-11-15T06:55:28.201Z"
+    "createdAt": "2026-11-16T06:58:54.099Z"
   },
   {
     "ok": true,
@@ -477,6 +477,36 @@
       16,
       17
     ],
-    "createdAt": "2026-11-15T06:55:28.201Z"
+    "createdAt": "2026-11-16T06:58:54.099Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "공동주택 게시판과 온라인 소통창구의 세대별 이용 차이",
+    "postId": 4529,
+    "status": "draft",
+    "slug": "intergenerational-difference-in-communication-channels",
+    "categoryId": 63,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      63
+    ],
+    "createdAt": "2026-11-16T07:00:09.185Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "지역 생활시설의 변화가 세대 간 만남에 미치는 영향",
+    "postId": 4531,
+    "status": "draft",
+    "slug": "community-facilities-and-generational-connection",
+    "categoryId": 19,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      19
+    ],
+    "createdAt": "2026-11-16T07:00:09.185Z"
   }
 ]

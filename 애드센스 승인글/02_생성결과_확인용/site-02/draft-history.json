@@ -492,7 +492,7 @@
       16,
       63
     ],
-    "createdAt": "2026-11-16T07:00:09.185Z"
+    "createdAt": "2026-11-17T08:14:52.331Z"
   },
   {
     "ok": true,
@@ -507,6 +507,36 @@
       16,
       19
     ],
-    "createdAt": "2026-11-16T07:00:09.185Z"
+    "createdAt": "2026-11-17T08:14:52.331Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족 행사와 기념일을 공유하는 방식의 변화",
+    "postId": 4534,
+    "status": "draft",
+    "slug": "changes-in-sharing-family-events-and-anniversaries",
+    "categoryId": 59,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      59
+    ],
+    "createdAt": "2026-11-17T08:16:08.582Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대 협력 활동에서 참여자의 생활시간 차이를 조율하는 방법",
+    "postId": 4536,
+    "status": "draft",
+    "slug": "how-to-coordinate-different-schedules",
+    "categoryId": 22,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      22
+    ],
+    "createdAt": "2026-11-17T08:16:08.582Z"
   }
 ]

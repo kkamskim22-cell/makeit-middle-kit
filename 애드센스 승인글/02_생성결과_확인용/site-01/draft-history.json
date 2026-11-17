@@ -462,7 +462,7 @@
       13,
       15
     ],
-    "createdAt": "2026-11-16T02:36:04.633Z"
+    "createdAt": "2026-11-17T04:57:32.956Z"
   },
   {
     "ok": true,
@@ -477,6 +477,36 @@
       13,
       14
     ],
-    "createdAt": "2026-11-16T02:36:04.633Z"
+    "createdAt": "2026-11-17T04:57:32.956Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "회의 참석자마다 다른 의견을 혼동하지 않고 기록하는 방법",
+    "postId": 2586,
+    "status": "draft",
+    "slug": "record-meeting-opinions-clearly",
+    "categoryId": 16,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      16
+    ],
+    "createdAt": "2026-11-17T04:58:51.386Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "한 달 전 기록에서 아직 해결되지 않은 질문을 찾는 방법",
+    "postId": 2588,
+    "status": "draft",
+    "slug": "find-unresolved-questions-from-old-notes",
+    "categoryId": 12,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      12
+    ],
+    "createdAt": "2026-11-17T04:58:51.386Z"
   }
 ]

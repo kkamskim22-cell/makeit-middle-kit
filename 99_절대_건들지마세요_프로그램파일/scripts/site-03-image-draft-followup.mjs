@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import {readFileSync} from "node:fs";
-import {dirname, join} from "node:path";
+import {dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {browserHeaders} from "./lib/wp.mjs";
 import {requireLicense} from "./lib/env.mjs";
@@ -16,6 +16,7 @@ const programRoot = dirname(scriptDir);
 const planPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "image-draft-followup-plan.json");
 const recoveredPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "recovered-history.json");
 const trialHistoryPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "trial-verified-history.json");
+const ORIGINAL_WORKFLOW_REF = "kkamskim22-cell/makeit-middle-kit/.github/workflows/site-03-image-draft-followup.yml@refs/heads/main";
 
 function argument(name) {
   const prefix = `--${name}=`;
@@ -161,8 +162,8 @@ async function createAndUploadImage({apiKey, base, headers, image, title, onUplo
   return {id: verified.id, sourceUrl: verified.source_url, altText: verified.alt_text, caption: image.alt};
 }
 
-async function main() {
-  if (process.env.GITHUB_ACTIONS !== "true" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" || process.env.GITHUB_WORKFLOW_REF !== "kkamskim22-cell/makeit-middle-kit/.github/workflows/site-03-image-draft-followup.yml@refs/heads/main" || process.env.GITHUB_RUN_ATTEMPT !== "1") {
+export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORKFLOW_REF} = {}) {
+  if (process.env.GITHUB_ACTIONS !== "true" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" || process.env.GITHUB_WORKFLOW_REF !== expectedWorkflowRef || process.env.GITHUB_RUN_ATTEMPT !== "1") {
     throw new Error("전용 후속 워크플로의 최초 시도에서만 실행할 수 있습니다.");
   }
   const env = requireLicense({scriptLabel: "사이트 3 이미지 포함 임시글"});
@@ -213,4 +214,6 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  runImageDraftFollowup();
+}

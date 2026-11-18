@@ -26,6 +26,45 @@ export function validateApprovedRunHistory({runs, currentRunId, currentRunAttemp
   return {guard: "passed", currentRunId, priorFailedRunId: failed.id, approvedNewRunCount: 1};
 }
 
+export function validateApprovedSuccessorRunHistory({
+  priorRuns,
+  successorRuns,
+  currentRunId,
+  currentRunAttempt,
+  expectedFailedRunIds,
+  targetTitle,
+}) {
+  if (targetTitle !== APPROVED_TITLE) throw safetyFailure("target_title_mismatch");
+  if (currentRunAttempt !== 1) throw safetyFailure("rerun_blocked");
+  if (!Array.isArray(priorRuns) || !Array.isArray(successorRuns) || !Array.isArray(expectedFailedRunIds)) {
+    throw safetyFailure("history_lookup_failed");
+  }
+  const expectedIds = [...expectedFailedRunIds];
+  const uniqueExpectedIds = new Set(expectedIds);
+  if (expectedIds.length !== 2 || uniqueExpectedIds.size !== 2 || expectedIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
+      priorRuns.length !== expectedIds.length) {
+    throw safetyFailure("unexpected_prior_history");
+  }
+  for (const expectedId of expectedIds) {
+    const matches = priorRuns.filter((run) => run?.id === expectedId);
+    if (matches.length !== 1) throw safetyFailure("unexpected_prior_history");
+    const run = matches[0];
+    if (run.event !== "workflow_dispatch" || run.run_attempt !== 1 || run.status !== "completed" || run.conclusion !== "failure") {
+      throw safetyFailure("unexpected_prior_history");
+    }
+  }
+  if (successorRuns.length !== 1) {
+    if (!successorRuns.some((run) => run?.id === currentRunId)) throw safetyFailure("current_run_missing");
+    throw safetyFailure("unexpected_run_history");
+  }
+  const current = successorRuns[0];
+  if (current?.id !== currentRunId) throw safetyFailure("current_run_missing");
+  if (current.event !== "workflow_dispatch" || current.run_attempt !== 1 || current.status !== "in_progress" || current.conclusion !== null) {
+    throw safetyFailure("current_run_state_invalid");
+  }
+  return {guard: "passed", currentRunId, priorFailedRunIds: expectedIds, approvedNewRunCount: 1};
+}
+
 export async function fetchWorkflowRuns({repository, workflowFile, token, request = fetch}) {
   if (!repository || !workflowFile || !token) throw safetyFailure("history_lookup_failed");
   const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflowFile)}/runs?event=workflow_dispatch&per_page=100`;

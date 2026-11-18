@@ -34,6 +34,11 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
+      - name: 승인된 단일 실행 이력 확인
+        working-directory: 99_절대_건들지마세요_프로그램파일
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/site-03-image-draft-run-guard.mjs
       - name: 로컬 모의 테스트
         working-directory: 99_절대_건들지마세요_프로그램파일
         run: node --test test/site-03-draft-trial.test.mjs

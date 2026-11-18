@@ -8,6 +8,7 @@ import {requireLicense} from "./lib/env.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
 import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements} from "./lib/site-03-image-draft-plan.mjs";
 import {parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
+import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -122,7 +123,7 @@ async function createArticle({apiKey, plan}) {
   return parseArticleResponseData({data, httpStatus: response.status, minimumCharacterCount: 3000});
 }
 
-async function createAndUploadImage({apiKey, base, headers, image, title}) {
+async function createAndUploadImage({apiKey, base, headers, image, title, onUploaded}) {
   let imageResponse;
   try {
     imageResponse = await fetch("https://api.openai.com/v1/images/generations", {
@@ -142,6 +143,7 @@ async function createAndUploadImage({apiKey, base, headers, image, title}) {
   });
   const media = await jsonResponse(upload, "article_response");
   if (!upload.ok || !Number.isSafeInteger(media.id)) throw attachTrialDiagnostic(new Error("이미지 업로드 실패"), "article_response", {httpStatus: upload.status});
+  onUploaded?.({role: image.role, id: media.id});
   const update = await fetch(`${base}/wp-json/wp/v2/media/${media.id}`, {
     method: "POST",
     headers: {...headers, "Content-Type": "application/json"},
@@ -168,6 +170,12 @@ async function main() {
   const parentId = positiveInteger(argument("parent-category-id"));
   const childId = positiveInteger(argument("child-category-id"));
   if (!base || !parentId || !childId) throw new Error("확인된 상위·세부 카테고리 ID가 필요합니다.");
+  const mediaRecorder = createMediaIdRecorder();
+  const recordUploadedMedia = (record) => {
+    const summary = mediaRecorder.record(record);
+    const mediaRole = record.role === "featured" ? "featured" : `inline_${summary.inlineMediaIds.length}`;
+    console.log(JSON.stringify({site: 3, event: "media_uploaded", mediaRole, mediaId: record.id, uploadedMediaCount: summary.uploadedMediaCount}));
+  };
   let stage = "preflight";
   try {
     const categories = await getAllCategories({base, headers});
@@ -182,9 +190,10 @@ async function main() {
     stage = "image_generation";
     const featuredPlan = plan.images.find((image) => image.role === "featured");
     const inlinePlans = plan.images.filter((image) => image.role === "inline");
-    const featured = await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image: featuredPlan, title: plan.title});
+    const featured = await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image: featuredPlan, title: plan.title, onUploaded: recordUploadedMedia});
     const inline = [];
-    for (const image of inlinePlans) inline.push(await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image, title: plan.title}));
+    for (const image of inlinePlans) inline.push(await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image, title: plan.title, onUploaded: recordUploadedMedia}));
+    const mediaSummary = mediaRecorder.assertComplete();
     const content = insertInlineImages(article, inline);
     stage = "wordpress_draft_create";
     const createdResponse = await fetch(`${base}/wp-json/wp/v2/posts?context=edit`, {method: "POST", headers: {...headers, "Content-Type": "application/json"}, body: JSON.stringify({title: plan.title, content, status: "draft", categories: [parentId, childId], featured_media: featured.id, excerpt: plan.seo.description})});
@@ -195,9 +204,9 @@ async function main() {
     const post = await jsonResponse(postResponse, "article_response");
     if (!postResponse.ok) throw attachTrialDiagnostic(new Error("임시글 재조회 실패"), "article_response", {httpStatus: postResponse.status});
     const verify = verifyDraftPostRequirements({post, plan, parentId, childId, media: [{id: featured.id, source_url: featured.sourceUrl, alt_text: featured.altText}, ...inline.map((item) => ({id: item.id, source_url: item.sourceUrl, alt_text: item.altText}))], featuredMediaId: featured.id, inlineMediaIds: inline.map((item) => item.id)});
-    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false}));
+    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, ...mediaSummary}));
   } catch (error) {
-    console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage)}));
+    console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage), ...mediaRecorder.summary()}));
     process.exitCode = 1;
   }
 }

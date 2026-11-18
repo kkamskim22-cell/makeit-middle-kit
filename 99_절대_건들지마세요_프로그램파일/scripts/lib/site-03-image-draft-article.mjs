@@ -1,5 +1,7 @@
 import {attachTrialDiagnostic} from "./site-03-trial-diagnostics.mjs";
 
+export const ARTICLE_MINIMUM_CHARACTER_COUNT = 1500;
+
 function responseFailure(errorType, details = {}) {
   return attachTrialDiagnostic(new Error(errorType), errorType, details);
 }
@@ -38,14 +40,24 @@ export function extractArticleOutputText(data) {
   return parts.join("\n").trim();
 }
 
-export function parseArticleResponseData({data, httpStatus = 200, minimumCharacterCount = 3000}) {
+export function countArticleCharacters(html) {
+  const visibleText = String(html || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&(?:nbsp|ensp|emsp|thinsp|#0*160|#x0*a0);/gi, " ")
+    .replace(/&#(?:x[0-9a-f]+|\d+);/gi, "X")
+    .replace(/&[a-z][a-z0-9]+;/gi, "X")
+    .replace(/[\s\u200b-\u200d\ufeff]/g, "");
+  return Array.from(visibleText).length;
+}
+
+export function parseArticleResponseData({data, httpStatus = 200, minimumCharacterCount = ARTICLE_MINIMUM_CHARACTER_COUNT}) {
   if (data?.status === "incomplete") {
     throw responseFailure("article_incomplete", {finishReason: data.incomplete_details?.reason});
   }
   validateOutputShape(data, httpStatus);
   const html = extractArticleOutputText(data);
   if (!html) throw responseFailure("article_empty", {httpStatus});
-  const characterCount = html.replace(/<[^>]*>/g, "").replace(/\s/g, "").length;
+  const characterCount = countArticleCharacters(html);
   if (characterCount < minimumCharacterCount) {
     throw responseFailure("article_too_short", {characterCount, minimumCharacterCount});
   }

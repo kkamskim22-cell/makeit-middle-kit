@@ -7,7 +7,7 @@ import {browserHeaders} from "./lib/wp.mjs";
 import {requireLicense} from "./lib/env.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
 import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements} from "./lib/site-03-image-draft-plan.mjs";
-import {parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
+import {ARTICLE_MINIMUM_CHARACTER_COUNT, parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
 import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
@@ -110,7 +110,9 @@ async function createArticle({apiKey, plan}) {
           `Title: ${plan.title}`,
           "Compare Santiago, Chile and Mendoza, Argentina across seasons, explaining the Andes rain-shadow context carefully.",
           `Use these sources as a fact-checking checklist and include a short sources section with these URLs: ${plan.sources.join(" ")}`,
-          "Use h2 headings, paragraphs, and a comparison table. Do not use h1, Markdown, scripts, iframes, or unsupported claims.",
+          "Aim for 1,800-2,500 Korean visible characters excluding HTML tags and whitespace; longer is allowed only when the content remains substantive and complete.",
+          "Use 3-5 meaningful h2 headings, paragraphs, and a comparison table. Do not repeat ideas or add filler just to increase length.",
+          "Do not use h1, Markdown, scripts, iframes, or unsupported claims.",
           `SEO keyword: ${plan.seo.keyword}`,
         ].join("\n")}],
       }),
@@ -120,7 +122,7 @@ async function createArticle({apiKey, plan}) {
   }
   const data = await jsonResponse(response, "article_response");
   if (!response.ok) throw attachTrialDiagnostic(new Error("본문 API 실패"), "article_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
-  return parseArticleResponseData({data, httpStatus: response.status, minimumCharacterCount: 3000});
+  return parseArticleResponseData({data, httpStatus: response.status, minimumCharacterCount: ARTICLE_MINIMUM_CHARACTER_COUNT});
 }
 
 async function createAndUploadImage({apiKey, base, headers, image, title, onUploaded}) {

@@ -3,7 +3,7 @@ import test from "node:test";
 import {parseArticleResponseData} from "../scripts/lib/site-03-image-draft-article.mjs";
 import {safeTrialDiagnostic} from "../scripts/lib/site-03-trial-diagnostics.mjs";
 
-const validHtml = `<!-- wp:paragraph --><p>${"가".repeat(3100)}</p><!-- /wp:paragraph -->`;
+const validHtml = `<!-- wp:paragraph --><p>${"가".repeat(1800)}</p><!-- /wp:paragraph -->`;
 
 function diagnostic(error) {
   return safeTrialDiagnostic(error, "article_generation");
@@ -29,6 +29,32 @@ test("Responses API output 배열의 output_text 본문을 추출한다", () => 
 
 test("최상위 output_text 본문도 기존처럼 허용한다", () => {
   assert.equal(parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: validHtml, output: []}}), validHtml);
+});
+
+test("공백 제외 실제 본문이 정확히 1,500자이면 허용한다", () => {
+  const html = `<!-- wp:paragraph --><p>${"가 ".repeat(1500)}</p><!-- /wp:paragraph -->`;
+  assert.equal(parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}), html);
+});
+
+test("공백 제외 실제 본문이 1,500자 미만이면 article_too_short로 중단한다", () => {
+  const html = `<!-- wp:paragraph --><p>${"가".repeat(1499)}</p><!-- /wp:paragraph -->`;
+  assert.throws(
+    () => parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}),
+    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1499, minimumCharacterCount: 1500}),
+  );
+});
+
+test("실제 본문이 2,500자를 초과해도 완성된 Gutenberg HTML이면 허용한다", () => {
+  const html = `<!-- wp:paragraph --><p>${"가".repeat(2501)}</p><!-- /wp:paragraph -->`;
+  assert.equal(parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}), html);
+});
+
+test("HTML 태그와 공백 엔티티 및 보이지 않는 공백은 글자 수를 늘리지 않는다", () => {
+  const html = `<!-- wp:paragraph --><p>${"가".repeat(1498)}${"\u200b".repeat(20)} &nbsp; &amp;</p><!-- /wp:paragraph -->`;
+  assert.throws(
+    () => parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}),
+    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1499, minimumCharacterCount: 1500}),
+  );
 });
 
 test("완료 응답에 실제 본문이 없으면 article_empty로 구분한다", () => {

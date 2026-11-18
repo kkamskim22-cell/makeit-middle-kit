@@ -492,7 +492,7 @@
       13,
       16
     ],
-    "createdAt": "2026-11-17T04:58:51.386Z"
+    "createdAt": "2026-11-18T04:02:10.274Z"
   },
   {
     "ok": true,
@@ -507,6 +507,36 @@
       9,
       12
     ],
-    "createdAt": "2026-11-17T04:58:51.386Z"
+    "createdAt": "2026-11-18T04:02:10.274Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "개인 메모에서 임시 태그와 장기 태그를 구분하는 방법",
+    "postId": 2594,
+    "status": "draft",
+    "slug": "separate-temporary-and-long-term-tags",
+    "categoryId": 10,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      10
+    ],
+    "createdAt": "2026-11-18T04:03:20.699Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "서로 반대되는 정보를 한 화면에서 비교하는 정리법",
+    "postId": 2596,
+    "status": "draft",
+    "slug": "compare-opposing-information-at-once",
+    "categoryId": 11,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      11
+    ],
+    "createdAt": "2026-11-18T04:03:20.699Z"
   }
 ]

@@ -522,7 +522,7 @@
       20,
       59
     ],
-    "createdAt": "2026-11-17T08:16:08.582Z"
+    "createdAt": "2026-11-18T07:47:37.475Z"
   },
   {
     "ok": true,
@@ -537,6 +537,36 @@
       20,
       22
     ],
-    "createdAt": "2026-11-17T08:16:08.582Z"
+    "createdAt": "2026-11-18T07:47:37.475Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "미래 고령사회에서 세대별 여가활동이 다양해지는 배경",
+    "postId": 4539,
+    "status": "draft",
+    "slug": "why-elderly-society-diversifies-leisure",
+    "categoryId": 60,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      60
+    ],
+    "createdAt": "2026-11-18T07:48:41.324Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모의 생애 이야기를 자녀가 처음 알게 되는 시점이 중요한 이유",
+    "postId": 4541,
+    "status": "draft",
+    "slug": "why-timing-matters-for-children-learning-parent-life",
+    "categoryId": 5,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      5
+    ],
+    "createdAt": "2026-11-18T07:48:41.324Z"
   }
 ]

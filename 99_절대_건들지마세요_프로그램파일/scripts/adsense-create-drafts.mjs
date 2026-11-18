@@ -7,7 +7,9 @@ import {fileURLToPath} from "node:url";
 import {readTitleEntries, resolveTitleFile} from "./title-files.mjs";
 import * as titleFiles from "./title-files.mjs";
 import {keysGuideMessage, requireLicense} from "./lib/env.mjs";
-import {wpFetch} from "./lib/wp.mjs";
+import {browserHeaders, wpFetch} from "./lib/wp.mjs";
+import {runSite03DraftTrial} from "./lib/site-03-draft-trial.mjs";
+import {readRecoveredHistory} from "./lib/site-03-recovered-history.mjs";
 import {돈줄, 예산상태, 원장기록, 진행표시, 천단위, 퍼센트, 퍼센트문구} from "./lib/usage.mjs";
 
 const programRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -1526,7 +1528,7 @@ async function extendArticle({apiKey, model, title, html, 부족자수}) {
   return {추가, usage: extractUsage(data)};
 }
 
-async function createDraftPost({siteUrl, username, appPassword, title, html, date, meta, featuredMediaId, selectedCategory}) {
+async function createDraftPost({siteUrl, username, appPassword, title, html, date, meta, featuredMediaId, selectedCategory, request = wpFetch}) {
   const credentials = wordpressCredentials(username, appPassword);
   const payload = {
     title,
@@ -1540,7 +1542,7 @@ async function createDraftPost({siteUrl, username, appPassword, title, html, dat
   const categoryIds = categoryIdsForPayload(selectedCategory);
   if (categoryIds.length > 0) payload.categories = categoryIds;
 
-  const response = await wpFetch(`${wordpressBaseUrl(siteUrl)}/wp-json/wp/v2/posts?context=edit`, {
+  const response = await request(`${wordpressBaseUrl(siteUrl)}/wp-json/wp/v2/posts?context=edit`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${credentials}`,
@@ -1638,9 +1640,17 @@ async function updateDraftPostContent({siteUrl, username, appPassword, postId, h
   return data;
 }
 
+const site = Number(argValue("site", "1"));
+const site03Trial = argValue("site-03-trial") === "1";
+if (site03Trial && (site !== 3 || process.argv.length !== 4 || process.argv[2] !== "--site=3" || process.argv[3] !== "--site-03-trial=1" ||
+    process.env.GITHUB_ACTIONS !== "true" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" ||
+    process.env.GITHUB_WORKFLOW_REF !== "kkamskim22-cell/makeit-middle-kit/.github/workflows/site-03-draft-trial.yml@refs/heads/main" ||
+    process.env.GITHUB_RUN_NUMBER !== "1" || process.env.GITHUB_RUN_ATTEMPT !== "1")) {
+  console.error("사이트 3 시험은 전용 워크플로의 첫 실행에서만 가능합니다.");
+  process.exit(1);
+}
 // 라이센스 게이트(수강 코드 확인) 통과 후, process.env 우선 + .env.local 보조로 설정을 읽는다 (PRD D8·D9)
 const env = requireLicense({scriptLabel: "애드센스 승인글 만들기"});
-const site = Number(argValue("site", "1"));
 const limit = Number(argValue("limit", "0"));
 const maxDrafts = Math.max(0, Number(argValue("max-drafts", "0")) || 0);
 const includeUsedTitles = ["1", "true", "yes"].includes(argValue("include-used", "0").toLowerCase());
@@ -1703,6 +1713,71 @@ if (!dryRun && (!ready(siteUrl, ["example.com", "example-"]) || !ready(username,
 
 const titleCatalog = readTitleEntries(titlesPath);
 const allTitleEntries = titleCatalog.entries;
+
+if (site03Trial) {
+  const siteBase = wordpressBaseUrl(siteUrl);
+  const request = (url, options) => fetch(url, {
+    ...options,
+    headers: {...browserHeaders(url), ...options.headers},
+    redirect: "error",
+    signal: AbortSignal.timeout(30000),
+  });
+  let stage = "사전 검증";
+  try {
+    await runSite03DraftTrial({
+      siteBase, request,
+      headers: {Authorization: `Basic ${wordpressCredentials(username, appPassword)}`, Accept: "application/json"},
+      entries: allTitleEntries, titleKey,
+      readHistory: () => {
+        stage = "생성 이력 확인";
+        const history = [];
+        let foundHistory = false;
+        for (const dir of [outputDir, visibleOutputDir]) {
+          for (const file of ["draft-history.json", "last-run.json"]) {
+            const path = join(dir, file);
+            if (!existsSync(path)) continue;
+            const records = JSON.parse(readFileSync(path, "utf8"));
+            if (!Array.isArray(records) || records.some((item) => !item || typeof item.title !== "string")) {
+              throw new Error("생성 이력 형식 오류");
+            }
+            if (file === "draft-history.json") foundHistory = true;
+            history.push(...records.filter((item) => item.ok));
+          }
+        }
+        const recoveredHistoryPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "recovered-history.json");
+        const recoveredHistory = readRecoveredHistory(recoveredHistoryPath);
+        history.push(...recoveredHistory);
+        if (!foundHistory && recoveredHistory.length === 0) throw new Error("누적 생성 이력 없음");
+        stage = "제목과 세부 카테고리 검증";
+        return history;
+      },
+      mapCategory: (categories, entry) => {
+        const category = selectMappedCategory(categories, entry);
+        const parent = categories.find(({id}) => id === category?.parentId);
+        return category?.source === "title-file-child" && parent &&
+          comparableCategoryName(parent.name) === comparableCategoryName(entry.parentCategory) ? category : null;
+      },
+      report: (data) => console.log(JSON.stringify(data)),
+      createDraft: async ({title, category}) => {
+        stage = "본문 생성";
+        const {meta} = await generatePostMeta({apiKey: env.OPENAI_API_KEY, model, title});
+        const article = await generateArticle({apiKey: env.OPENAI_API_KEY, model, title, minChars, 키워드: meta.focusKeyword});
+        if (article.짧음) throw new Error("본문 분량 미달");
+        stage = "임시글 저장";
+        const post = await createDraftPost({
+          siteUrl, username, appPassword, title, html: article.html, meta, selectedCategory: category, request,
+        });
+        stage = "임시글 검증";
+        return post;
+      },
+    });
+  } catch {
+    console.error(JSON.stringify({site: 3, failedStage: stage}));
+    process.exitCode = 1;
+  }
+  process.exit(process.exitCode || 0);
+}
+
 const previousDraftHistory = readDraftHistory(outputDir, visibleOutputDir);
 
 // 이미 쓴 글 걸러내기 ① 이 키트로 만든 기록  ② 워드프레스에 실제로 올라가 있는 글

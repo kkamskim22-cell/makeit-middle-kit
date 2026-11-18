@@ -7,6 +7,7 @@ import {browserHeaders} from "./lib/wp.mjs";
 import {requireLicense} from "./lib/env.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
 import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements} from "./lib/site-03-image-draft-plan.mjs";
+import {parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -118,13 +119,7 @@ async function createArticle({apiKey, plan}) {
   }
   const data = await jsonResponse(response, "article_response");
   if (!response.ok) throw attachTrialDiagnostic(new Error("본문 API 실패"), "article_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
-  if (data.status === "incomplete") throw attachTrialDiagnostic(new Error("본문 출력 중단"), "article_incomplete", {finishReason: data.incomplete_details?.reason});
-  const html = String(data.output_text || "").trim();
-  if (!html) throw attachTrialDiagnostic(new Error("본문 비어 있음"), "article_empty", {httpStatus: response.status});
-  const characterCount = html.replace(/<[^>]*>/g, "").replace(/\s/g, "").length;
-  if (characterCount < 3000) throw attachTrialDiagnostic(new Error("본문 분량 미달"), "article_too_short", {characterCount, minimumCharacterCount: 3000});
-  if (!/<!--\s*wp:/i.test(html) || /<h1\b/i.test(html)) throw attachTrialDiagnostic(new Error("Gutenberg HTML 검증 실패"), "article_html_invalid", {htmlRule: "gutenberg_or_h1", characterCount});
-  return html;
+  return parseArticleResponseData({data, httpStatus: response.status, minimumCharacterCount: 3000});
 }
 
 async function createAndUploadImage({apiKey, base, headers, image, title}) {

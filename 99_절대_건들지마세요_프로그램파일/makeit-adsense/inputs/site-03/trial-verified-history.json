@@ -1,0 +1,15 @@
+{
+  "source": "site-03-trial-workflow",
+  "limitations": "일회성 시험 실행 44231170375에서 WordPress ID 재조회와 제목, 카테고리, draft 상태, 중복 검증을 통과한 글만 포함한다.",
+  "records": [
+    {
+      "ok": true,
+      "site": 3,
+      "title": "지중해 지역 세계 여행지의 봄 풍경이 특별한 이유",
+      "postId": 965,
+      "status": "draft",
+      "categoryIds": [4, 5],
+      "recovery": {"source": "site-03-trial-workflow", "runId": 44231170375, "verified": true}
+    }
+  ]
+}

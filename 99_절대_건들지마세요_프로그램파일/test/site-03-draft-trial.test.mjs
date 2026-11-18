@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {fileURLToPath} from "node:url";
+import {readFileSync} from "node:fs";
 import {runSite03DraftTrial} from "../scripts/lib/site-03-draft-trial.mjs";
-import {readRecoveredHistory, validateRecoveredHistory, verifyRecoveredHistory} from "../scripts/lib/site-03-recovered-history.mjs";
+import {readRecoveredHistory, readTrialVerifiedHistory, validateRecoveredHistory, verifyRecoveredHistory} from "../scripts/lib/site-03-recovered-history.mjs";
+import {attachTrialDiagnostic, safeTrialDiagnostic, trialFailure} from "../scripts/lib/site-03-trial-diagnostics.mjs";
+import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements, verifyImageDraftRecord} from "../scripts/lib/site-03-image-draft-plan.mjs";
 
 const categories = [{id: 1, name: "Parent", parent: 0}, {id: 2, name: "A", parent: 1}, {id: 3, name: "B", parent: 1}];
 const entries = [
@@ -143,6 +146,14 @@ test("일회성 시험은 복구 이력의 제목을 새 글 후보에서 제외
   assert.deepEqual(created.map((post) => post.title.raw), ["새 제목 A", "새 제목 B"]);
 });
 
+test("검증된 시험 글 ID 965는 복구 이력과 분리해 중복 제외 목록에 보관한다", () => {
+  const path = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/trial-verified-history.json", import.meta.url));
+  assert.deepEqual(readTrialVerifiedHistory(path), [{
+    ok: true, site: 3, title: "지중해 지역 세계 여행지의 봄 풍경이 특별한 이유", postId: 965, status: "draft",
+    categoryIds: [4, 5], recovery: {source: "site-03-trial-workflow", runId: 44231170375, verified: true},
+  }]);
+});
+
 test("삭제되거나 제목이 바뀐 글도 원래 복구 제목은 제외 목록에 유지한다", async () => {
   const records = [
     {ok: true, site: 3, title: "원래 제목", postId: 744, status: "draft", recovery: {source: "github-actions-log", runId: 39734583604, jobId: 119677191159}},
@@ -166,4 +177,95 @@ test("삭제되거나 제목이 바뀐 글도 원래 복구 제목은 제외 목
   assert.deepEqual(result.excludedTitles, ["원래 제목", "삭제된 제목"]);
   assert.deepEqual(result.changedPostIds, [744]);
   assert.deepEqual(result.deletedPostIds, [746]);
+});
+
+test("OpenAI API 오류는 HTTP 상태와 안전한 오류 코드만 진단한다", () => {
+  const diagnostic = safeTrialDiagnostic(trialFailure("article_api", {httpStatus: 429, openAiCode: "rate_limit_exceeded"}), "article_generation");
+  assert.deepEqual(diagnostic, {stage: "article_generation", errorType: "article_api", httpStatus: 429, openAiCode: "rate_limit_exceeded"});
+  assert.equal(JSON.stringify(diagnostic).includes("secret"), false);
+});
+
+test("원본 오류 메시지는 보존하면서 안전한 진단 값만 별도로 붙인다", () => {
+  const error = attachTrialDiagnostic(new Error("응답 원문은 로그에 쓰지 않는다"), "meta_response", {httpStatus: 200});
+  assert.equal(error.message, "응답 원문은 로그에 쓰지 않는다");
+  assert.deepEqual(safeTrialDiagnostic(error, "meta_generation"), {stage: "meta_generation", errorType: "meta_response", httpStatus: 200});
+});
+
+test("출력 중단, HTML 검증, 분량 미달을 서로 다른 안전한 진단으로 기록한다", () => {
+  assert.deepEqual(
+    safeTrialDiagnostic(trialFailure("article_incomplete", {finishReason: "max_output_tokens"}), "article_generation"),
+    {stage: "article_generation", errorType: "article_incomplete", finishReason: "max_output_tokens"},
+  );
+  assert.deepEqual(
+    safeTrialDiagnostic(trialFailure("article_html_invalid", {htmlRule: "missing_gutenberg_block"}), "article_validation"),
+    {stage: "article_validation", errorType: "article_html_invalid", htmlRule: "missing_gutenberg_block"},
+  );
+  assert.deepEqual(
+    safeTrialDiagnostic(trialFailure("article_too_short", {characterCount: 1200, minimumCharacterCount: 3000}), "article_validation"),
+    {stage: "article_validation", errorType: "article_too_short", characterCount: 1200, minimumCharacterCount: 3000},
+  );
+});
+
+test("이미지 포함 후속 계획은 제목, 4-3 카테고리, 세 이미지와 근거를 요구한다", () => {
+  const plan = {
+    title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교",
+    categoryKey: "4-3",
+    seo: {title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교", description: "안데스 산맥 서쪽의 산티아고와 동쪽의 멘도사를 계절별 기후와 여행 환경으로 비교합니다.", keyword: "안데스 산맥 양쪽 여행지 계절 기후 비교"},
+    sources: ["https://www.britannica.com/place/Andes-Mountains", "https://www.britannica.com/place/Santiago-Chile", "https://www.britannica.com/place/Mendoza-Argentina"],
+    images: [
+      {role: "featured", placement: "featured", alt: "안데스 산맥 양쪽의 계절 기후 차이를 보여주는 산맥과 계곡 풍경", scene: "A text-free aerial view of the Andes between green western valleys and dry eastern foothills"},
+      {role: "inline", placement: "after_winter_section", alt: "겨울철 안데스 산맥 서쪽과 동쪽의 강수 차이를 보여주는 산악 풍경", scene: "A text-free winter Andes mountain landscape with cloud-covered western slopes and dry eastern foothills"},
+      {role: "inline", placement: "after_summer_section", alt: "여름철 산티아고와 멘도사의 여행 환경을 보여주는 안데스 산맥 풍경", scene: "A text-free summer Andes travel landscape with a city valley and dry mountain foothills"},
+    ],
+  };
+  assert.deepEqual(validateImageDraftPlan(plan), plan);
+  assert.throws(() => validateImageDraftPlan({...plan, seo: {...plan.seo, title: "다른 SEO 제목"}}), /SEO title/);
+  assert.throws(() => assertPlanTitleUnused(plan, [plan.title]), /중복/);
+});
+
+test("대표 이미지와 본문 이미지 두 개가 업로드되고 Gutenberg 본문에 연결됐는지 검증한다", () => {
+  const media = [
+    {id: 31, source_url: "https://site.example/31.jpg", alt_text: "대표 이미지"},
+    {id: 32, source_url: "https://site.example/32.jpg", alt_text: "본문 이미지 하나"},
+    {id: 33, source_url: "https://site.example/33.jpg", alt_text: "본문 이미지 둘"},
+  ];
+  const post = {status: "draft", featured_media: 31, content: {raw: '<img class="wp-image-32"><img class="wp-image-33">'}};
+  assert.deepEqual(verifyImageDraftRecord({post, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), {imageCount: 3, inlineImageCount: 2, status: "draft"});
+  assert.throws(() => verifyImageDraftRecord({post: {...post, content: {raw: '<img class="wp-image-31"><img class="wp-image-32"><img class="wp-image-33">'}}, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), /중복/);
+});
+
+test("후속 초안은 제목·카테고리·요약문·핵심 키워드를 재조회로 검증한다", () => {
+  const plan = {
+    title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교",
+    seo: {description: "안데스 산맥 양쪽 도시의 계절 기후를 비교합니다.", keyword: "안데스 계절 기후"},
+    sources: ["https://example.test/source-a", "https://example.test/source-b", "https://example.test/source-c"],
+  };
+  const post = {
+    status: "draft",
+    title: {raw: plan.title},
+    excerpt: {raw: plan.seo.description},
+    categories: [4, 5],
+    featured_media: 31,
+    content: {raw: '<p>안데스 계절 기후 https://example.test/source-a https://example.test/source-b https://example.test/source-c</p><img class="wp-image-32"><img class="wp-image-33">'},
+  };
+  const media = [
+    {id: 31, source_url: "https://site.example/31.jpg", alt_text: "대표 이미지"},
+    {id: 32, source_url: "https://site.example/32.jpg", alt_text: "본문 이미지 하나"},
+    {id: 33, source_url: "https://site.example/33.jpg", alt_text: "본문 이미지 둘"},
+  ];
+  assert.deepEqual(
+    verifyDraftPostRequirements({post, plan, parentId: 4, childId: 5, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}),
+    {imageCount: 3, inlineImageCount: 2, status: "draft"},
+  );
+  assert.throws(() => verifyDraftPostRequirements({post: {...post, excerpt: {raw: "다른 요약"}}, plan, parentId: 4, childId: 5, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), /SEO/);
+});
+
+test("지정한 이미지 포함 글 계획은 복구 이력과 시험 이력의 제목을 피한다", () => {
+  const planPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/image-draft-followup-plan.json", import.meta.url));
+  const plan = JSON.parse(readFileSync(planPath, "utf8"));
+  const recoveredPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/recovered-history.json", import.meta.url));
+  const trialPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/trial-verified-history.json", import.meta.url));
+  const usedTitles = [...readRecoveredHistory(recoveredPath), ...readTrialVerifiedHistory(trialPath)].map((record) => record.title);
+  assert.deepEqual(validateImageDraftPlan(plan), plan);
+  assert.equal(assertPlanTitleUnused(plan, usedTitles), true);
 });

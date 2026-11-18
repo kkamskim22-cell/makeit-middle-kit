@@ -9,7 +9,8 @@ import * as titleFiles from "./title-files.mjs";
 import {keysGuideMessage, requireLicense} from "./lib/env.mjs";
 import {browserHeaders, wpFetch} from "./lib/wp.mjs";
 import {runSite03DraftTrial} from "./lib/site-03-draft-trial.mjs";
-import {readRecoveredHistory} from "./lib/site-03-recovered-history.mjs";
+import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
+import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 import {돈줄, 예산상태, 원장기록, 진행표시, 천단위, 퍼센트, 퍼센트문구} from "./lib/usage.mjs";
 
 const programRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -353,6 +354,23 @@ function validateArticleHtml(html, title, {minChars = 0} = {}) {
       }
     }
   }
+}
+
+function articleHtmlRule(error) {
+  const message = String(error?.message || "");
+  if (message.includes("h1")) return "h1_remaining";
+  if (message.includes("Gutenberg")) return "missing_gutenberg_block";
+  if (message.includes("첫 소제목")) return "missing_first_h2";
+  if (message.includes("제목과 첫 h2")) return "same_title_first_h2";
+  if (message.includes("마크다운 표")) return "markdown_table";
+  if (message.includes("닫히지 않음")) return "unclosed_table";
+  if (message.includes("블록 껍데기")) return "missing_table_block";
+  if (message.includes("칸 수")) return "uneven_table_columns";
+  return "unknown_html_rule";
+}
+
+function trialDiagnosticError(safeDiagnostics, error, errorType, details = {}) {
+  return safeDiagnostics ? attachTrialDiagnostic(error, errorType, details) : error;
 }
 
 function extractOutputText(data) {
@@ -1099,7 +1117,7 @@ async function fetchWordPressCategories({siteUrl, username, appPassword}) {
   return collected;
 }
 
-async function generatePostMeta({apiKey, model, title, 고정키워드 = ""}) {
+async function generatePostMeta({apiKey, model, title, 고정키워드 = "", safeDiagnostics = false}) {
   const systemPrompt = [
     "너는 한국어 글 제목을 보고 워드프레스 발행 메타를 만드는 편집자다.",
     "반드시 JSON 객체만 출력한다. 설명, 코드블록, 마크다운은 출력하지 않는다.",
@@ -1125,36 +1143,46 @@ async function generatePostMeta({apiKey, model, title, 고정키워드 = ""}) {
     "}",
   ].join("\n");
 
-  const response = await fetch(openAiResponsesUrl(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      input: [
-        {role: "system", content: systemPrompt},
-        {role: "user", content: userPrompt},
-      ],
-      max_output_tokens: 2000,
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(openAiResponsesUrl(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {role: "system", content: systemPrompt},
+          {role: "user", content: userPrompt},
+        ],
+        max_output_tokens: 2000,
+      }),
+    });
+  } catch (error) {
+    throw trialDiagnosticError(safeDiagnostics, error, "meta_api");
+  }
 
   const body = await response.text();
   let data;
   try {
     data = JSON.parse(body);
   } catch {
-    throw new Error(`OpenAI 메타 응답을 해석하지 못함: ${body.slice(0, 200)}`);
+    throw trialDiagnosticError(safeDiagnostics, new Error(`OpenAI 메타 응답을 해석하지 못함: ${body.slice(0, 200)}`), "meta_response", {httpStatus: response.status});
   }
 
   if (!response.ok) {
     const message = data.error?.message || body.slice(0, 300);
-    throw new Error(`OpenAI 메타 생성 실패: ${message}`);
+    throw trialDiagnosticError(safeDiagnostics, new Error(`OpenAI 메타 생성 실패: ${message}`), "meta_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
   }
 
-  const parsed = extractJsonObject(extractOutputText(data));
+  let parsed;
+  try {
+    parsed = extractJsonObject(extractOutputText(data));
+  } catch (error) {
+    throw trialDiagnosticError(safeDiagnostics, error, "meta_response", {httpStatus: response.status});
+  }
 
   return {
     meta: ensureMetaDefaults(parsed, title),
@@ -1412,7 +1440,7 @@ function postHasInlineImage(post, media) {
   return content.includes(`wp-image-${media.id}`) || content.includes(`"id":${media.id}`);
 }
 
-async function generateArticle({apiKey, model, title, minChars, 키워드 = ""}) {
+async function generateArticle({apiKey, model, title, minChars, 키워드 = "", safeDiagnostics = false}) {
   const systemPrompt = [
     "너는 애드센스 승인용 정보성 글을 작성하는 한국어 에디터다.",
     "허위 정보, 과장, 출처 없는 단정, 의료/법률/금융 확정 조언을 피한다.",
@@ -1443,33 +1471,38 @@ async function generateArticle({apiKey, model, title, minChars, 키워드 = ""})
     "- 표는 모든 행의 칸 수가 같아야 함",
   ].join("\n");
 
-  const response = await fetch(openAiResponsesUrl(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      input: [
-        {role: "system", content: systemPrompt},
-        {role: "user", content: userPrompt},
-      ],
-      max_output_tokens: Number(env.ARTICLE_MAX_OUTPUT_TOKENS || 12000),
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(openAiResponsesUrl(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {role: "system", content: systemPrompt},
+          {role: "user", content: userPrompt},
+        ],
+        max_output_tokens: Number(env.ARTICLE_MAX_OUTPUT_TOKENS || 12000),
+      }),
+    });
+  } catch (error) {
+    throw trialDiagnosticError(safeDiagnostics, error, "article_api");
+  }
 
   const body = await response.text();
   let data;
   try {
     data = JSON.parse(body);
   } catch {
-    throw new Error(`OpenAI 응답을 해석하지 못함: ${body.slice(0, 200)}`);
+    throw trialDiagnosticError(safeDiagnostics, new Error(`OpenAI 응답을 해석하지 못함: ${body.slice(0, 200)}`), "article_response", {httpStatus: response.status});
   }
 
   if (!response.ok) {
     const message = data.error?.message || body.slice(0, 300);
-    throw new Error(`OpenAI API 실패: ${message}`);
+    throw trialDiagnosticError(safeDiagnostics, new Error(`OpenAI API 실패: ${message}`), "article_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
   }
 
   // 글이 중간에 끊겼는지 확인한다.
@@ -1479,16 +1512,23 @@ async function generateArticle({apiKey, model, title, minChars, 키워드 = ""})
   // 지금 모델은 생각하는 데도 출력 한도를 같이 쓰기 때문에 한도에 걸리는 일이 드물지 않다.
   if (data.status === "incomplete") {
     const reason = data.incomplete_details?.reason || "이유 미상";
-    const error = new Error(`본문이 중간에 끊겼어요 (${reason})`);
-    error.truncated = true;
-    throw error;
+    throw trialDiagnosticError(safeDiagnostics, new Error(`본문이 중간에 끊겼어요 (${reason})`), "article_incomplete", {finishReason: reason});
   }
 
-  const html = normalizeArticleHtml(extractOutputText(data), title);
-  if (!html) throw new Error("OpenAI가 빈 본문을 반환함");
+  let html;
+  try {
+    html = normalizeArticleHtml(extractOutputText(data), title);
+  } catch (error) {
+    throw trialDiagnosticError(safeDiagnostics, error, "article_response", {httpStatus: response.status});
+  }
+  if (!html) throw trialDiagnosticError(safeDiagnostics, new Error("OpenAI가 빈 본문을 반환함"), "article_empty", {httpStatus: response.status});
   // 분량은 여기서 실패시키지 않는다. 짧으면 호출한 쪽이 이어 써서 채운다 (2026-09-21 진현님: 짧다고 임시글을 안 만드는 일은 없어야 한다)
-  validateArticleHtml(html, title, {minChars: 0});
   const 글자수 = stripTags(html).replace(/\s/g, "").length;
+  try {
+    validateArticleHtml(html, title, {minChars: 0});
+  } catch (error) {
+    throw trialDiagnosticError(safeDiagnostics, error, "article_html_invalid", {htmlRule: articleHtmlRule(error), characterCount: 글자수});
+  }
   return {html, usage: extractUsage(data), 글자수, 짧음: minChars > 0 && 글자수 < minChars};
 }
 
@@ -1747,7 +1787,10 @@ if (site03Trial) {
         const recoveredHistoryPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "recovered-history.json");
         const recoveredHistory = readRecoveredHistory(recoveredHistoryPath);
         history.push(...recoveredHistory);
-        if (!foundHistory && recoveredHistory.length === 0) throw new Error("누적 생성 이력 없음");
+        const verifiedTrialHistoryPath = join(programRoot, "makeit-adsense", "inputs", "site-03", "trial-verified-history.json");
+        const verifiedTrialHistory = readTrialVerifiedHistory(verifiedTrialHistoryPath);
+        history.push(...verifiedTrialHistory);
+        if (!foundHistory && recoveredHistory.length === 0 && verifiedTrialHistory.length === 0) throw new Error("누적 생성 이력 없음");
         stage = "제목과 세부 카테고리 검증";
         return history;
       },
@@ -1759,20 +1802,27 @@ if (site03Trial) {
       },
       report: (data) => console.log(JSON.stringify(data)),
       createDraft: async ({title, category}) => {
-        stage = "본문 생성";
-        const {meta} = await generatePostMeta({apiKey: env.OPENAI_API_KEY, model, title});
-        const article = await generateArticle({apiKey: env.OPENAI_API_KEY, model, title, minChars, 키워드: meta.focusKeyword});
-        if (article.짧음) throw new Error("본문 분량 미달");
-        stage = "임시글 저장";
+        stage = "meta_generation";
+        const {meta} = await generatePostMeta({apiKey: env.OPENAI_API_KEY, model, title, safeDiagnostics: true});
+        stage = "article_generation";
+        const article = await generateArticle({apiKey: env.OPENAI_API_KEY, model, title, minChars, 키워드: meta.focusKeyword, safeDiagnostics: true});
+        stage = "article_validation";
+        if (article.짧음) {
+          throw attachTrialDiagnostic(new Error("본문 분량 미달"), "article_too_short", {
+            characterCount: article.글자수,
+            minimumCharacterCount: minChars,
+          });
+        }
+        stage = "wordpress_draft_create";
         const post = await createDraftPost({
           siteUrl, username, appPassword, title, html: article.html, meta, selectedCategory: category, request,
         });
-        stage = "임시글 검증";
+        stage = "wordpress_draft_verify";
         return post;
       },
     });
-  } catch {
-    console.error(JSON.stringify({site: 3, failedStage: stage}));
+  } catch (error) {
+    console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage)}));
     process.exitCode = 1;
   }
   process.exit(process.exitCode || 0);

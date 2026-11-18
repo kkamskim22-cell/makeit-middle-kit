@@ -38,6 +38,23 @@ export function readRecoveredHistory(path) {
   return validateRecoveredHistory(document.records);
 }
 
+export function readTrialVerifiedHistory(path) {
+  const document = JSON.parse(readFileSync(path, "utf8"));
+  if (document?.source !== "site-03-trial-workflow" || !Array.isArray(document.records)) {
+    throw new Error("시험 검증 이력 문서 형식이 올바르지 않습니다.");
+  }
+  for (const record of document.records) {
+    if (record?.ok !== true || record?.site !== 3 || typeof record.title !== "string" || !record.title.trim() ||
+        !Number.isSafeInteger(record.postId) || record.postId <= 0 || record.status !== "draft" ||
+        !Array.isArray(record.categoryIds) || record.categoryIds.length === 0 ||
+        record?.recovery?.source !== "site-03-trial-workflow" || record.recovery.verified !== true ||
+        !Number.isSafeInteger(record.recovery.runId) || record.recovery.runId <= 0) {
+      throw new Error("시험 검증 이력의 출처 또는 검증 상태가 올바르지 않습니다.");
+    }
+  }
+  return document.records;
+}
+
 export async function verifyRecoveredHistory({siteBase, headers, records, request}) {
   validateRecoveredHistory(records);
   const base = String(siteBase || "").replace(/\/+$/, "");

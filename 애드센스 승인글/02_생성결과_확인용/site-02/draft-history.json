@@ -552,7 +552,7 @@
       20,
       60
     ],
-    "createdAt": "2026-11-18T07:48:41.324Z"
+    "createdAt": "2026-11-19T07:43:26.530Z"
   },
   {
     "ok": true,
@@ -567,6 +567,36 @@
       4,
       5
     ],
-    "createdAt": "2026-11-18T07:48:41.324Z"
+    "createdAt": "2026-11-19T07:43:26.530Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모 세대와 자녀 세대가 사생활을 공개하는 범위를 다르게 생각하는 이유",
+    "postId": 4544,
+    "status": "draft",
+    "slug": "why-generations-differ-on-privacy-sharing",
+    "categoryId": 61,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      61
+    ],
+    "createdAt": "2026-11-19T07:44:38.275Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모 세대와 자녀 세대가 칭찬을 받아들이는 방식이 다른 이유",
+    "postId": 4546,
+    "status": "draft",
+    "slug": "why-generations-accept-praise-differently",
+    "categoryId": 54,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      54
+    ],
+    "createdAt": "2026-11-19T07:44:38.275Z"
   }
 ]

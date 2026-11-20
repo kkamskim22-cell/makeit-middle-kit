@@ -582,7 +582,7 @@
       4,
       61
     ],
-    "createdAt": "2026-11-19T07:44:38.275Z"
+    "createdAt": "2026-11-20T07:35:19.818Z"
   },
   {
     "ok": true,
@@ -597,6 +597,36 @@
       4,
       54
     ],
-    "createdAt": "2026-11-19T07:44:38.275Z"
+    "createdAt": "2026-11-20T07:35:19.818Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모의 취미활동을 성인 자녀가 지원할 때 적절한 역할의 범위",
+    "postId": 4548,
+    "status": "draft",
+    "slug": "adult-child-support-for-parent-hobbies",
+    "categoryId": 9,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      9
+    ],
+    "createdAt": "2026-11-20T07:36:33.456Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "조부모가 손자녀에게 과거의 집안 살림 도구를 소개할 때 배울 수 있는 것",
+    "postId": 4550,
+    "status": "draft",
+    "slug": "lessons-from-old-household-tools",
+    "categoryId": 10,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      10
+    ],
+    "createdAt": "2026-11-20T07:36:33.456Z"
   }
 ]

@@ -552,7 +552,7 @@
       17,
       20
     ],
-    "createdAt": "2026-11-20T03:54:33.593Z"
+    "createdAt": "2026-11-21T03:46:14.447Z"
   },
   {
     "ok": true,
@@ -567,6 +567,36 @@
       17,
       19
     ],
-    "createdAt": "2026-11-20T03:54:33.593Z"
+    "createdAt": "2026-11-21T03:46:14.447Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "두 개의 관련 없는 메모를 연결해 새로운 아이디어 만들기",
+    "postId": 2606,
+    "status": "draft",
+    "slug": "connect-unrelated-notes-ideas",
+    "categoryId": 18,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      18
+    ],
+    "createdAt": "2026-11-21T03:47:25.992Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "이동 중 기록과 책상 앞 기록을 연결하는 도구 운영법",
+    "postId": 2608,
+    "status": "draft",
+    "slug": "connect-notes-on-the-go-and-desk",
+    "categoryId": 23,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      23
+    ],
+    "createdAt": "2026-11-21T03:47:25.992Z"
   }
 ]

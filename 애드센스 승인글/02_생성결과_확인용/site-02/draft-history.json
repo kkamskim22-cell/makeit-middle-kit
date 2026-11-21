@@ -612,7 +612,7 @@
       8,
       9
     ],
-    "createdAt": "2026-11-20T07:36:33.456Z"
+    "createdAt": "2026-11-21T07:30:50.252Z"
   },
   {
     "ok": true,
@@ -627,6 +627,36 @@
       8,
       10
     ],
-    "createdAt": "2026-11-20T07:36:33.456Z"
+    "createdAt": "2026-11-21T07:30:50.252Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "가족 구성원의 생활방식에 맞춰 공용 냉장고를 관리하는 방법",
+    "postId": 4559,
+    "status": "draft",
+    "slug": "shared-fridge-management-family-routines",
+    "categoryId": 11,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      11
+    ],
+    "createdAt": "2026-11-21T07:31:47.137Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "은퇴 이후 정기적인 외출 일정을 만드는 것이 일상에 미치는 변화",
+    "postId": 4561,
+    "status": "draft",
+    "slug": "retirement-routine-outings-change-daily-life",
+    "categoryId": 56,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      56
+    ],
+    "createdAt": "2026-11-21T07:31:47.137Z"
   }
 ]

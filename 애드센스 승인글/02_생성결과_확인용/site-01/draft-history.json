@@ -582,7 +582,7 @@
       17,
       18
     ],
-    "createdAt": "2026-11-21T03:47:25.992Z"
+    "createdAt": "2026-11-22T02:50:24.771Z"
   },
   {
     "ok": true,
@@ -597,6 +597,36 @@
       21,
       23
     ],
-    "createdAt": "2026-11-21T03:47:25.992Z"
+    "createdAt": "2026-11-22T02:50:24.771Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "이미지가 포함된 메모를 검색하기 쉽게 관리하는 방법",
+    "postId": 2610,
+    "status": "draft",
+    "slug": "manage-image-notes-for-search",
+    "categoryId": 22,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      22
+    ],
+    "createdAt": "2026-11-22T02:51:33.042Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "3개월 전 메모와 현재 메모를 비교해 개선점을 찾는 방법",
+    "postId": 2612,
+    "status": "draft",
+    "slug": "compare-old-notes-and-find-improvements",
+    "categoryId": 24,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      24
+    ],
+    "createdAt": "2026-11-22T02:51:33.042Z"
   }
 ]

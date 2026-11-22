@@ -642,7 +642,7 @@
       8,
       11
     ],
-    "createdAt": "2026-11-21T07:31:47.137Z"
+    "createdAt": "2026-11-22T07:12:17.193Z"
   },
   {
     "ok": true,
@@ -657,6 +657,36 @@
       55,
       56
     ],
-    "createdAt": "2026-11-21T07:31:47.137Z"
+    "createdAt": "2026-11-22T07:12:17.193Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모 세대와 자녀 세대가 인터넷 검색 결과를 확인하는 기준의 차이",
+    "postId": 4563,
+    "status": "draft",
+    "slug": "generational-differences-in-search-evaluation",
+    "categoryId": 62,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      62
+    ],
+    "createdAt": "2026-11-22T07:13:16.827Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "부모 세대와 자녀 세대가 공연 관람 좌석을 선택하는 기준의 차이",
+    "postId": 4565,
+    "status": "draft",
+    "slug": "differences-in-seat-choice-for-shows-by-generation",
+    "categoryId": 57,
+    "parentCategoryId": 55,
+    "categoryIds": [
+      55,
+      57
+    ],
+    "createdAt": "2026-11-22T07:13:16.827Z"
   }
 ]

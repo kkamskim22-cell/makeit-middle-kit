@@ -2,8 +2,11 @@
 
 import {browserHeaders, isCloudflare, looksLikeChallenge, toRestRouteUrl} from "./lib/wp.mjs";
 import {fileURLToPath} from "node:url";
+import {isIP} from "node:net";
 
 const SITE = 3;
+const PAST_BLOCKED_RUNNER_IP = "3.41.210.120";
+const RUNNER_IP_URL = "https://api.ipify.org?format=json";
 const POST_LIST_QUERY = {
   context: "edit",
   status: "draft,pending,future,publish,private",
@@ -51,13 +54,26 @@ export function buildPostListProbes(siteUrl) {
     for (const [key, value] of Object.entries({...POST_LIST_QUERY, _fields: fieldSet})) direct.searchParams.set(key, value);
     const alternate = toRestRouteUrl(direct.toString());
     return [
-      {route: "wp-json", fields: fieldSet, url: direct.toString()},
-      {route: "rest_route", fields: fieldSet, url: alternate},
+      {route: "wp-json", resource: "posts", fields: fieldSet, url: direct.toString()},
+      {route: "rest_route", resource: "posts", fields: fieldSet, url: alternate},
     ];
   });
 }
 
-async function inspectResponse({route, fields, url}, authorization, fetchFn) {
+export function buildCategoryProbe(siteUrl) {
+  const url = new URL(`${normalizedSiteUrl(siteUrl)}/wp-json/wp/v2/categories`);
+  for (const [key, value] of Object.entries({
+    per_page: "100",
+    page: "1",
+    hide_empty: "false",
+    orderby: "id",
+    order: "asc",
+    _fields: "id,name,parent",
+  })) url.searchParams.set(key, value);
+  return {route: "wp-json", resource: "categories", fields: "id,name,parent", url: url.toString()};
+}
+
+async function inspectResponse({route, resource, fields, url}, authorization, fetchFn) {
   const response = await fetchFn(url, {
     method: "GET",
     headers: {...browserHeaders(url), Authorization: authorization, Accept: "application/json"},
@@ -67,12 +83,34 @@ async function inspectResponse({route, fields, url}, authorization, fetchFn) {
   const body = response.ok ? "" : await response.text();
   return {
     route,
+    resource,
     fields,
     httpStatus: response.status,
     contentType,
     wordpressErrorCode: safeWordPressErrorCode(body, contentType),
     waf: safeWafSignals(response, body),
   };
+}
+
+async function inspectRunnerIp(fetchFn) {
+  try {
+    const response = await fetchFn(RUNNER_IP_URL, {
+      method: "GET",
+      headers: {Accept: "application/json"},
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return {lookupHttpStatus: response.status, externalIp: null, matchesPastBlockedIp: null};
+    const data = await response.json();
+    const externalIp = String(data?.ip || "").trim();
+    if (!isIP(externalIp)) return {lookupHttpStatus: response.status, externalIp: null, matchesPastBlockedIp: null};
+    return {
+      lookupHttpStatus: response.status,
+      externalIp,
+      matchesPastBlockedIp: externalIp === PAST_BLOCKED_RUNNER_IP,
+    };
+  } catch {
+    return {lookupHttpStatus: null, externalIp: null, matchesPastBlockedIp: null};
+  }
 }
 
 async function inspectPermission(siteUrl, authorization, fetchFn) {
@@ -94,13 +132,21 @@ async function inspectPermission(siteUrl, authorization, fetchFn) {
 export async function runRest403Diagnostic({siteUrl, authorization, fetchFn = fetch}) {
   const probes = [];
   let permission = {userContextEdit: false, editPosts: null};
+  let requestCount = 0;
+  const countedFetch = (...args) => {
+    requestCount += 1;
+    return fetchFn(...args);
+  };
+  const runner = await inspectRunnerIp(countedFetch);
   try {
-    permission = await inspectPermission(siteUrl, authorization, fetchFn);
-    for (const probe of buildPostListProbes(siteUrl)) probes.push(await inspectResponse(probe, authorization, fetchFn));
+    permission = await inspectPermission(siteUrl, authorization, countedFetch);
+    for (const probe of buildPostListProbes(siteUrl)) probes.push(await inspectResponse(probe, authorization, countedFetch));
+    probes.push(await inspectResponse(buildCategoryProbe(siteUrl), authorization, countedFetch));
   } catch {
-    return {site: SITE, permission, probes, diagnosis: "판정 불가", requestCount: probes.length + 1};
+    return {site: SITE, runner, permission, probes, diagnosis: "판정 불가", requestCount};
   }
-  return {site: SITE, permission, probes, diagnosis: "완료", requestCount: probes.length + 1};
+  const diagnosis = runner.externalIp ? "완료" : "판정 불가";
+  return {site: SITE, runner, permission, probes, diagnosis, requestCount};
 }
 
 async function main() {

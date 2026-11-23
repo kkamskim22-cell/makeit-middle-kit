@@ -3,15 +3,60 @@ function requiredText(value, label) {
   return value.trim();
 }
 
-function titleKey(value) {
-  return String(value || "").normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
+export function normalizedTitleKey(value) {
+  return String(value || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+function visibleText(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&[a-z0-9#]+;/gi, " ")
+    .normalize("NFC")
+    .toLowerCase();
+}
+
+function tokenStem(value) {
+  return String(value || "").replace(/(?:으로|에서|에게|까지|부터|처럼|보다|이나|거나|은|는|이|가|을|를|의|에|와|과|로)$/u, "");
+}
+
+function textTokens(value) {
+  return (visibleText(value).match(/[\p{L}\p{N}]+/gu) || []).map(tokenStem).filter((token) => token.length >= 2);
+}
+
+function tokenSimilarity(left, right) {
+  const a = new Set(textTokens(left));
+  const b = new Set(textTokens(right));
+  if (!a.size || !b.size) return 0;
+  const intersection = [...a].filter((token) => b.has(token)).length;
+  return intersection / new Set([...a, ...b]).size;
+}
+
+const GENERIC_TITLE_TOKENS = new Set(["세계", "여행지", "계절", "비교", "이유", "방법", "사이", "지역"]);
+
+function coreTitleTokens(value) {
+  return new Set(textTokens(value).filter((token) => !GENERIC_TITLE_TOKENS.has(token)));
+}
+
+function titlesAreSimilar(target, candidate) {
+  if (normalizedTitleKey(target) === normalizedTitleKey(candidate)) return true;
+  const targetCore = coreTitleTokens(target);
+  const candidateCore = coreTitleTokens(candidate);
+  if (targetCore.size >= 2) return [...targetCore].every((token) => candidateCore.has(token));
+  return tokenSimilarity(target, candidate) >= 0.6;
+}
+
+function shingles(value, size = 5) {
+  const tokens = textTokens(value);
+  const result = new Set();
+  for (let index = 0; index <= tokens.length - size; index += 1) result.add(tokens.slice(index, index + size).join(" "));
+  return result;
 }
 
 export function validateImageDraftPlan(plan) {
   requiredText(plan?.title, "제목");
   if (!/^\d+-\d+$/.test(String(plan?.categoryKey || ""))) throw new Error("세부 카테고리 키 형식이 올바르지 않습니다.");
   for (const field of ["title", "description", "keyword"]) requiredText(plan?.seo?.[field], `SEO ${field}`);
-  if (titleKey(plan.seo.title) !== titleKey(plan.title)) throw new Error("SEO title은 글 제목과 같아야 합니다.");
+  if (normalizedTitleKey(plan.seo.title) !== normalizedTitleKey(plan.title)) throw new Error("SEO title은 글 제목과 같아야 합니다.");
   if (!Array.isArray(plan?.sources) || plan.sources.length < 3 || plan.sources.some((source) => !/^https:\/\//.test(source))) {
     throw new Error("확인 가능한 지리·기후 근거가 부족합니다.");
   }
@@ -30,8 +75,44 @@ export function validateImageDraftPlan(plan) {
 }
 
 export function assertPlanTitleUnused(plan, usedTitles) {
-  const key = titleKey(plan?.title);
-  if ((usedTitles || []).map(titleKey).includes(key)) throw new Error("지정 제목이 기존 글 또는 이력과 중복됩니다.");
+  const key = normalizedTitleKey(plan?.title);
+  if ((usedTitles || []).map(normalizedTitleKey).includes(key)) throw new Error("지정 제목이 기존 글 또는 이력과 중복됩니다.");
+  return true;
+}
+
+export function matchingTitlePostIds(title, posts) {
+  const key = normalizedTitleKey(title);
+  return (posts || [])
+    .filter((post) => normalizedTitleKey(post?.title?.raw || post?.title?.rendered) === key)
+    .map((post) => post.id);
+}
+
+export function assessPlanSimilarity(plan, posts) {
+  const similarTitlePostIds = [];
+  const topicBodyPostIds = [];
+  const markers = (plan?.locations || []).map((location) => textTokens(location).at(-1)).filter(Boolean);
+  for (const post of posts || []) {
+    const title = post?.title?.raw || post?.title?.rendered || "";
+    if (titlesAreSimilar(plan?.title, title)) similarTitlePostIds.push(post.id);
+    const content = visibleText(post?.content?.raw || post?.content?.rendered || "");
+    if (markers.length >= 2 && markers.every((marker) => content.includes(marker))) topicBodyPostIds.push(post.id);
+  }
+  return {
+    similarTitlePostIds,
+    topicBodyPostIds,
+    any: similarTitlePostIds.length > 0 || topicBodyPostIds.length > 0,
+  };
+}
+
+export function assertArticleContentDistinct(articleHtml, posts) {
+  const articleShingles = shingles(articleHtml);
+  for (const post of posts || []) {
+    const existingShingles = shingles(post?.content?.raw || post?.content?.rendered || "");
+    const denominator = Math.min(articleShingles.size, existingShingles.size);
+    if (!denominator) continue;
+    const overlap = [...articleShingles].filter((item) => existingShingles.has(item)).length / denominator;
+    if (overlap >= 0.3) throw new Error("새 본문이 기존 본문과 유사하여 생성을 중단합니다.");
+  }
   return true;
 }
 

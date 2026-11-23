@@ -6,7 +6,14 @@ import {fileURLToPath} from "node:url";
 import {browserHeaders} from "./lib/wp.mjs";
 import {requireLicense} from "./lib/env.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
-import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements} from "./lib/site-03-image-draft-plan.mjs";
+import {
+  assessPlanSimilarity,
+  assertArticleContentDistinct,
+  assertPlanTitleUnused,
+  matchingTitlePostIds,
+  validateImageDraftPlan,
+  verifyDraftPostRequirements,
+} from "./lib/site-03-image-draft-plan.mjs";
 import {ARTICLE_MINIMUM_CHARACTER_COUNT, parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
 import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
@@ -67,19 +74,31 @@ async function jsonResponse(response, errorType) {
   }
 }
 
-async function getAllPosts({base, headers}) {
+export async function getAllPosts({base, headers, request = fetch}) {
   const posts = [];
+  let expectedTotal = null;
+  let expectedPages = null;
   for (let page = 1; page <= 30; page += 1) {
-    const response = await fetch(`${base}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish,private,trash&per_page=100&page=${page}&orderby=id&order=asc&_fields=id,title`, {method: "GET", headers});
+    const response = await request(`${base}/wp-json/wp/v2/posts?context=edit&status=draft,pending,future,publish,private,trash&per_page=100&page=${page}&orderby=id&order=asc&_fields=id,title,content`, {method: "GET", headers});
     if (response.status !== 200) throw attachTrialDiagnostic(new Error("글 목록 조회 실패"), "article_response", {httpStatus: response.status});
     const data = await jsonResponse(response, "article_response");
     if (!Array.isArray(data)) throw attachTrialDiagnostic(new Error("글 목록 형식 오류"), "article_response", {httpStatus: response.status});
-    posts.push(...data);
+    const totalHeader = response.headers.get("x-wp-total");
+    const pagesHeader = response.headers.get("x-wp-totalpages");
+    if (!/^\d+$/.test(totalHeader || "") || !/^\d+$/.test(pagesHeader || "")) throw new Error("글 목록 페이지 정보 오류");
+    const total = Number(totalHeader);
     const pages = Number(response.headers.get("x-wp-totalpages"));
-    if (!Number.isInteger(pages) || pages < 1 || pages > 30) throw new Error("글 목록 페이지 정보 오류");
-    if (page === pages) return posts;
+    expectedTotal ??= total;
+    expectedPages ??= pages;
+    if (total !== expectedTotal || pages !== expectedPages || pages < 1 || pages > 30 || page > pages) throw new Error("글 목록 페이지 정보 오류");
+    posts.push(...data);
+    if (page === pages) break;
   }
-  throw new Error("글 목록이 너무 많아 안전하게 확인하지 못했습니다.");
+  if (posts.length !== expectedTotal || new Set(posts.map((post) => post?.id)).size !== posts.length ||
+      posts.some((post) => !Number.isSafeInteger(post?.id) || post.id <= 0)) {
+    throw new Error("전체 글 목록을 완전하게 확인하지 못했습니다.");
+  }
+  return posts;
 }
 
 async function getAllCategories({base, headers}) {
@@ -185,11 +204,19 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const posts = await getAllPosts({base, headers});
     const history = [...readRecoveredHistory(recoveredPath), ...readTrialVerifiedHistory(trialHistoryPath)];
     assertPlanTitleUnused(plan, [...posts.map((post) => post?.title?.raw), ...history.map((entry) => entry.title)]);
+    if (assessPlanSimilarity(plan, posts).any) throw new Error("기존 글과 제목 또는 핵심 주제가 유사하여 생성을 중단합니다.");
     const child = categories.find((category) => category.id === childId && category.parent === parentId);
     const parent = categories.find((category) => category.id === parentId && category.parent === 0);
     if (!parent || !child) throw new Error("기존 카테고리 4-3의 상위·세부 ID 관계를 확인하지 못했습니다.");
     stage = "article_generation";
     const article = await createArticle({apiKey: env.OPENAI_API_KEY, plan});
+    stage = "article_similarity_validation";
+    assertArticleContentDistinct(article, posts);
+    stage = "wordpress_preupload_duplicate_recheck";
+    const preuploadPosts = await getAllPosts({base, headers});
+    assertPlanTitleUnused(plan, [...preuploadPosts.map((post) => post?.title?.raw), ...history.map((entry) => entry.title)]);
+    if (assessPlanSimilarity(plan, preuploadPosts).any) throw new Error("이미지 업로드 전 기존 글과 제목 또는 핵심 주제가 유사하여 중단합니다.");
+    assertArticleContentDistinct(article, preuploadPosts);
     stage = "image_generation";
     const featuredPlan = plan.images.find((image) => image.role === "featured");
     const inlinePlans = plan.images.filter((image) => image.role === "inline");
@@ -198,6 +225,11 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     for (const image of inlinePlans) inline.push(await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image, title: plan.title, onUploaded: recordUploadedMedia}));
     const mediaSummary = mediaRecorder.assertComplete();
     const content = insertInlineImages(article, inline);
+    stage = "wordpress_duplicate_recheck";
+    const currentPosts = await getAllPosts({base, headers});
+    assertPlanTitleUnused(plan, [...currentPosts.map((post) => post?.title?.raw), ...history.map((entry) => entry.title)]);
+    if (assessPlanSimilarity(plan, currentPosts).any) throw new Error("생성 직전 기존 글과 제목 또는 핵심 주제가 유사하여 중단합니다.");
+    assertArticleContentDistinct(article, currentPosts);
     stage = "wordpress_draft_create";
     const createdResponse = await fetch(`${base}/wp-json/wp/v2/posts?context=edit`, {method: "POST", headers: {...headers, "Content-Type": "application/json"}, body: JSON.stringify({title: plan.title, content, status: "draft", categories: [parentId, childId], featured_media: featured.id, excerpt: plan.seo.description})});
     const created = await jsonResponse(createdResponse, "article_response");
@@ -207,7 +239,11 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const post = await jsonResponse(postResponse, "article_response");
     if (!postResponse.ok) throw attachTrialDiagnostic(new Error("임시글 재조회 실패"), "article_response", {httpStatus: postResponse.status});
     const verify = verifyDraftPostRequirements({post, plan, parentId, childId, media: [{id: featured.id, source_url: featured.sourceUrl, alt_text: featured.altText}, ...inline.map((item) => ({id: item.id, source_url: item.sourceUrl, alt_text: item.altText}))], featuredMediaId: featured.id, inlineMediaIds: inline.map((item) => item.id)});
-    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, ...mediaSummary}));
+    stage = "wordpress_duplicate_verify";
+    const verifiedPosts = await getAllPosts({base, headers});
+    const matchingIds = matchingTitlePostIds(plan.title, verifiedPosts);
+    if (matchingIds.length !== 1 || matchingIds[0] !== post.id) throw new Error("생성 후 제목 중복 검증에 실패했습니다.");
+    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, duplicateTitleCount: matchingIds.length, contentSimilarity: "passed", ...mediaSummary}));
   } catch (error) {
     console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage), ...mediaRecorder.summary()}));
     process.exitCode = 1;

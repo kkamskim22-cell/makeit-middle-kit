@@ -5,7 +5,16 @@ import {readFileSync} from "node:fs";
 import {runSite03DraftTrial} from "../scripts/lib/site-03-draft-trial.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory, validateRecoveredHistory, verifyRecoveredHistory} from "../scripts/lib/site-03-recovered-history.mjs";
 import {attachTrialDiagnostic, safeTrialDiagnostic, trialFailure} from "../scripts/lib/site-03-trial-diagnostics.mjs";
-import {assertPlanTitleUnused, validateImageDraftPlan, verifyDraftPostRequirements, verifyImageDraftRecord} from "../scripts/lib/site-03-image-draft-plan.mjs";
+import {getAllPosts} from "../scripts/site-03-image-draft-followup.mjs";
+import {
+  assessPlanSimilarity,
+  assertArticleContentDistinct,
+  assertPlanTitleUnused,
+  matchingTitlePostIds,
+  validateImageDraftPlan,
+  verifyDraftPostRequirements,
+  verifyImageDraftRecord,
+} from "../scripts/lib/site-03-image-draft-plan.mjs";
 
 const categories = [{id: 1, name: "Parent", parent: 0}, {id: 2, name: "A", parent: 1}, {id: 3, name: "B", parent: 1}];
 const entries = [
@@ -221,6 +230,73 @@ test("이미지 포함 후속 계획은 제목, 4-3 카테고리, 세 이미지�
   assert.deepEqual(validateImageDraftPlan(plan), plan);
   assert.throws(() => validateImageDraftPlan({...plan, seo: {...plan.seo, title: "다른 SEO 제목"}}), /SEO title/);
   assert.throws(() => assertPlanTitleUnused(plan, [plan.title]), /중복/);
+});
+
+test("공백·문장부호·어순이 비슷한 제목과 같은 두 여행지를 다룬 기존 본문을 감지한다", () => {
+  const plan = {
+    title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교",
+    locations: ["칠레 산티아고", "아르헨티나 멘도사"],
+  };
+  assert.throws(() => assertPlanTitleUnused(plan, ["산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교! "]), /중복/);
+  assert.deepEqual(assessPlanSimilarity(plan, [
+    {id: 10, title: {raw: "산맥 사이 두 세계 여행지 계절 기후 비교"}, content: {raw: "<p>다른 내용</p>"}},
+    {id: 11, title: {raw: "남미 도시의 기후 차이"}, content: {raw: "<p>산티아고와 멘도사의 계절별 강수 차이를 설명합니다.</p>"}},
+    {id: 12, title: {raw: "호수 여행지의 여름 풍경"}, content: {raw: "<p>유럽 호수와 여름 식생을 설명합니다.</p>"}},
+  ]), {
+    similarTitlePostIds: [10],
+    topicBodyPostIds: [11],
+    any: true,
+  });
+  assert.deepEqual(assessPlanSimilarity(plan, [
+    {id: 13, title: {raw: "산맥 사이 여행지 기후 비교"}, content: {raw: "<p>다른 내용</p>"}},
+  ]), {similarTitlePostIds: [13], topicBodyPostIds: [], any: true});
+  assert.deepEqual(assessPlanSimilarity(plan, [
+    {id: 14, title: {raw: "산맥을 사이에 둔 두 세계 여행지의 계절 음식 비교"}, content: {raw: "<p>지역 음식 문화</p>"}},
+  ]), {similarTitlePostIds: [], topicBodyPostIds: [], any: false});
+});
+
+test("새 본문의 긴 문장 구간이 기존 본문과 겹치면 생성 전에 차단한다", () => {
+  const existing = [{
+    id: 20,
+    content: {raw: "<p>안데스 산맥 서쪽의 산티아고는 겨울철 강수가 집중되고 동쪽 멘도사는 건조한 지형의 영향을 크게 받습니다.</p>"},
+  }];
+  assert.throws(() => assertArticleContentDistinct(
+    "<p>안데스 산맥 서쪽의 산티아고는 겨울철 강수가 집중되고 동쪽 멘도사는 건조한 지형의 영향을 크게 받습니다.</p>",
+    existing,
+  ), /본문/);
+  assert.equal(assertArticleContentDistinct(
+    "<p>북유럽 호수는 백야와 빙하 지형의 영향으로 여름 수면 풍경이 독특하게 나타납니다.</p>",
+    existing,
+  ), true);
+});
+
+test("생성 후 같은 제목은 문장부호와 공백을 무시해 정확히 한 글 ID만 허용한다", () => {
+  const posts = [
+    {id: 30, title: {raw: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교"}},
+    {id: 31, title: {raw: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교!  "}},
+    {id: 32, title: {raw: "다른 여행지 제목"}},
+  ];
+  assert.deepEqual(matchingTitlePostIds("산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교", posts), [30, 31]);
+});
+
+test("전체 글 조회는 total·pages·고유 ID가 모두 일치해야 통과한다", async () => {
+  const response = (records, total, pages) => Response.json(records, {headers: {
+    "x-wp-total": String(total),
+    "x-wp-totalpages": String(pages),
+  }});
+  await assert.rejects(getAllPosts({
+    base: "https://site.example",
+    headers: {},
+    request: async () => response([{id: 1, title: {raw: "하나"}, content: {raw: "본문"}}], 2, 1),
+  }), /완전/);
+
+  await assert.rejects(getAllPosts({
+    base: "https://site.example",
+    headers: {},
+    request: async (url) => Number(new URL(url).searchParams.get("page")) === 1
+      ? response([{id: 1, title: {raw: "하나"}, content: {raw: "본문"}}], 2, 2)
+      : response([{id: 1, title: {raw: "하나"}, content: {raw: "본문"}}], 2, 2),
+  }), /완전/);
 });
 
 test("대표 이미지와 본문 이미지 두 개가 업로드되고 Gutenberg 본문에 연결됐는지 검증한다", () => {

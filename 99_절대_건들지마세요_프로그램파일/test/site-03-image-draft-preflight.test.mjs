@@ -7,6 +7,7 @@ const target = {
   categoryKey: "4-3",
   parentName: "세계 여행지의 계절별 기후 비교",
   childName: "바다와 지형이 만드는 계절 차이",
+  locations: ["칠레 산티아고", "아르헨티나 멘도사"],
 };
 
 const recovered = Array.from({length: 68}, (_, index) => ({title: `복구 제목 ${index + 1}`}));
@@ -28,8 +29,8 @@ test("카테고리와 전체 글을 GET으로만 조회하고 4-3 부모 관계�
         {id: 7, name: target.childName, parent: 4},
       ]);
     }
-    if (page === 1) return list([{id: 1, title: {raw: "기존 제목"}}], {total: 2, pages: 2});
-    return list([{id: 2, title: {raw: "다른 기존 제목"}}], {total: 2, pages: 2});
+    if (page === 1) return list([{id: 1, title: {raw: "기존 제목"}, content: {raw: "<p>기존 자연환경 글</p>"}}], {total: 2, pages: 2});
+    return list([{id: 2, title: {raw: "다른 기존 제목"}, content: {raw: "<p>다른 문화 글</p>"}}], {total: 2, pages: 2});
   };
 
   const result = await runSite03ImageDraftPreflight({
@@ -54,23 +55,43 @@ test("카테고리와 전체 글을 GET으로만 조회하고 4-3 부모 관계�
     recoveredHistoryCount: 68,
     trialHistoryCount: 1,
     duplicate: {wordpress: false, recoveredHistory: false, trialHistory: false, any: false},
+    similarity: {similarTitlePostIds: [], topicBodyPostIds: [], any: false},
   });
+  const postCalls = calls.filter((call) => new URL(call.url).pathname.endsWith("/posts"));
+  assert.equal(postCalls.every((call) => new URL(call.url).searchParams.get("_fields") === "id,title,content"), true);
   const output = JSON.stringify(result);
   assert.equal(output.includes("test-only-secret"), false);
   assert.equal(output.includes("Authorization"), false);
   assert.equal(output.includes("기존 제목"), false);
 });
 
-test("WordPress 또는 이력에서 제목이 중복되면 실행 준비를 거부한다", async () => {
+test("같은 두 여행지를 다룬 기존 본문이 있으면 생성 준비를 거부한다", async () => {
   const request = async (url) => new URL(url).pathname.endsWith("/categories")
     ? list([{id: 4, name: target.parentName, parent: 0}, {id: 7, name: target.childName, parent: 4}])
-    : list([{id: 10, title: {raw: `  ${target.title}  `}}]);
+    : list([{id: 10, title: {raw: "남미 도시 여행 정보"}, content: {raw: "<p>산티아고와 멘도사의 기후를 비교합니다.</p>"}}]);
   const result = await runSite03ImageDraftPreflight({
     siteBase: "https://site.example",
     authorization: "Basic test-only-secret",
     request,
     target,
-    recoveredHistory: [...recovered.slice(0, 67), {title: target.title}],
+    recoveredHistory: recovered,
+    trialHistory: trial,
+  });
+  assert.equal(result.ready, false);
+  assert.deepEqual(result.similarity, {similarTitlePostIds: [], topicBodyPostIds: [10], any: true});
+  assert.equal(JSON.stringify(result).includes("산티아고와 멘도사"), false);
+});
+
+test("WordPress 또는 이력에서 제목이 중복되면 실행 준비를 거부한다", async () => {
+  const request = async (url) => new URL(url).pathname.endsWith("/categories")
+    ? list([{id: 4, name: target.parentName, parent: 0}, {id: 7, name: target.childName, parent: 4}])
+    : list([{id: 10, title: {raw: `  ${target.title}!  `}, content: {raw: "<p>기존 글</p>"}}]);
+  const result = await runSite03ImageDraftPreflight({
+    siteBase: "https://site.example",
+    authorization: "Basic test-only-secret",
+    request,
+    target,
+    recoveredHistory: [...recovered.slice(0, 67), {title: `${target.title}.`}],
     trialHistory: trial,
   });
   assert.equal(result.ready, false);

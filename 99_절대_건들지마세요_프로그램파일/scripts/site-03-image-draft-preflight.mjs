@@ -5,6 +5,7 @@ import {dirname, join} from "node:path";
 import {browserHeaders} from "./lib/wp.mjs";
 import {PROGRAM_ROOT, PROJECT_ROOT} from "./lib/env.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory} from "./lib/site-03-recovered-history.mjs";
+import {assessPlanSimilarity, normalizedTitleKey} from "./lib/site-03-image-draft-plan.mjs";
 import {readTitleEntries, resolveTitleFile} from "./title-files.mjs";
 
 const SITE = 3;
@@ -98,21 +99,22 @@ export async function runSite03ImageDraftPreflight({siteBase, authorization, req
   const pair = findCategoryPair(categories.records, target);
 
   const postsUrl = new URL(`${base}/wp-json/wp/v2/posts`);
-  for (const [key, value] of Object.entries({context: "edit", status: "draft,pending,future,publish,private,trash", per_page: "100", orderby: "id", order: "asc", _fields: "id,title"})) {
+  for (const [key, value] of Object.entries({context: "edit", status: "draft,pending,future,publish,private,trash", per_page: "100", orderby: "id", order: "asc", _fields: "id,title,content"})) {
     postsUrl.searchParams.set(key, value);
   }
   const posts = await readAllPages({url: postsUrl, headers, request, stage: "post_get"});
-  const titleKey = normalizedText(target.title);
+  const titleKey = normalizedTitleKey(target.title);
   const duplicate = {
-    wordpress: posts.records.some((post) => normalizedText(post?.title?.raw) === titleKey),
-    recoveredHistory: recoveredHistory.some((record) => normalizedText(record?.title) === titleKey),
-    trialHistory: trialHistory.some((record) => normalizedText(record?.title) === titleKey),
+    wordpress: posts.records.some((post) => normalizedTitleKey(post?.title?.raw) === titleKey),
+    recoveredHistory: recoveredHistory.some((record) => normalizedTitleKey(record?.title) === titleKey),
+    trialHistory: trialHistory.some((record) => normalizedTitleKey(record?.title) === titleKey),
   };
   duplicate.any = duplicate.wordpress || duplicate.recoveredHistory || duplicate.trialHistory;
+  const similarity = assessPlanSimilarity(target, posts.records);
   return {
     site: SITE,
     diagnosis: "완료",
-    ready: !duplicate.any,
+    ready: !duplicate.any && !similarity.any,
     categoryHttpStatuses: categories.statuses,
     postHttpStatuses: posts.statuses,
     category: {key: target.categoryKey, parentId: pair.parent.id, childId: pair.child.id, parentChildVerified: true},
@@ -120,6 +122,7 @@ export async function runSite03ImageDraftPreflight({siteBase, authorization, req
     recoveredHistoryCount: recoveredHistory.length,
     trialHistoryCount: trialHistory.length,
     duplicate,
+    similarity,
   };
 }
 
@@ -128,7 +131,13 @@ function targetFromCatalog() {
   const parent = catalog.categories.find((category) => Number(category.number) === 4);
   const child = parent?.children?.find((category) => Number(category.number) === 3);
   if (!parent || !child || child.name !== EXPECTED_CHILD_NAME) throw safeFailure("target_validation", {reason: "invalid_target"});
-  return {title: TARGET_TITLE, categoryKey: TARGET_CATEGORY_KEY, parentName: parent.name, childName: child.name};
+  return {
+    title: TARGET_TITLE,
+    categoryKey: TARGET_CATEGORY_KEY,
+    parentName: parent.name,
+    childName: child.name,
+    locations: ["칠레 산티아고", "아르헨티나 멘도사"],
+  };
 }
 
 async function main() {

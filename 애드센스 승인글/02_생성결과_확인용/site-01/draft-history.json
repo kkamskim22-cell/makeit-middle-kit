@@ -612,7 +612,7 @@
       21,
       22
     ],
-    "createdAt": "2026-11-22T02:51:33.042Z"
+    "createdAt": "2026-11-23T03:31:28.609Z"
   },
   {
     "ok": true,
@@ -627,6 +627,36 @@
       21,
       24
     ],
-    "createdAt": "2026-11-22T02:51:33.042Z"
+    "createdAt": "2026-11-23T03:31:28.609Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "추상적인 고민을 구체적인 상황 문장으로 바꾸는 연습",
+    "postId": 2614,
+    "status": "draft",
+    "slug": "turn-abstract-worries-into-specific-sentences",
+    "categoryId": 7,
+    "parentCategoryId": 5,
+    "categoryIds": [
+      5,
+      7
+    ],
+    "createdAt": "2026-11-23T03:32:44.025Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "공부한 개념을 자신의 예시로 다시 설명하는 메모 실습",
+    "postId": 2616,
+    "status": "draft",
+    "slug": "explain-concepts-with-personal-examples",
+    "categoryId": 15,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      15
+    ],
+    "createdAt": "2026-11-23T03:32:44.025Z"
   }
 ]

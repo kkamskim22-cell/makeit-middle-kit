@@ -65,6 +65,37 @@ export function validateApprovedSuccessorRunHistory({
   return {guard: "passed", currentRunId, priorFailedRunIds: expectedIds, approvedNewRunCount: 1};
 }
 
+export function validateApprovedFinalRunHistory({
+  priorRuns,
+  finalRuns,
+  currentRunId,
+  currentRunAttempt,
+  expectedPriorFailedRunId,
+  targetTitle,
+}) {
+  if (targetTitle !== APPROVED_TITLE) throw safetyFailure("target_title_mismatch");
+  if (currentRunAttempt !== 1) throw safetyFailure("rerun_blocked");
+  if (!Array.isArray(priorRuns) || !Array.isArray(finalRuns)) throw safetyFailure("history_lookup_failed");
+  if (!Number.isSafeInteger(expectedPriorFailedRunId) || expectedPriorFailedRunId <= 0 || priorRuns.length !== 1) {
+    throw safetyFailure("unexpected_prior_history");
+  }
+  const prior = priorRuns[0];
+  if (prior?.id !== expectedPriorFailedRunId || prior.event !== "workflow_dispatch" || prior.run_attempt !== 1 ||
+      prior.status !== "completed" || prior.conclusion !== "failure") {
+    throw safetyFailure("unexpected_prior_history");
+  }
+  if (finalRuns.length !== 1) {
+    if (!finalRuns.some((run) => run?.id === currentRunId)) throw safetyFailure("current_run_missing");
+    throw safetyFailure("unexpected_run_history");
+  }
+  const current = finalRuns[0];
+  if (current?.id !== currentRunId) throw safetyFailure("current_run_missing");
+  if (current.event !== "workflow_dispatch" || current.run_attempt !== 1 || current.status !== "in_progress" || current.conclusion !== null) {
+    throw safetyFailure("current_run_state_invalid");
+  }
+  return {guard: "passed", currentRunId, priorFailedRunId: prior.id, approvedNewRunCount: 1};
+}
+
 export async function fetchWorkflowRuns({repository, workflowFile, token, request = fetch}) {
   if (!repository || !workflowFile || !token) throw safetyFailure("history_lookup_failed");
   const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflowFile)}/runs?event=workflow_dispatch&per_page=100`;

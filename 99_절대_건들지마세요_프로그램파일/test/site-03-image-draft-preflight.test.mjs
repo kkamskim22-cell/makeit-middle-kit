@@ -98,6 +98,24 @@ test("WordPress 또는 이력에서 제목이 중복되면 실행 준비를 거�
   assert.deepEqual(result.duplicate, {wordpress: true, recoveredHistory: true, trialHistory: false, any: true});
 });
 
+test("검증된 새 글을 복구 이력에 추가한 뒤에도 전체 이력으로 중복을 차단한다", async () => {
+  const expandedHistory = [...recovered, {title: `${target.title}.`}];
+  const request = async (url) => new URL(url).pathname.endsWith("/categories")
+    ? list([{id: 4, name: target.parentName, parent: 0}, {id: 7, name: target.childName, parent: 4}])
+    : list([]);
+  const result = await runSite03ImageDraftPreflight({
+    siteBase: "https://site.example",
+    authorization: "Basic test-only-secret",
+    request,
+    target,
+    recoveredHistory: expandedHistory,
+    trialHistory: trial,
+  });
+  assert.equal(result.recoveredHistoryCount, 69);
+  assert.equal(result.ready, false);
+  assert.deepEqual(result.duplicate, {wordpress: false, recoveredHistory: true, trialHistory: false, any: true});
+});
+
 test("카테고리 부모 관계가 다르거나 HTTP 오류이면 검증에 실패하고 재시도하지 않는다", async () => {
   let calls = 0;
   await assert.rejects(

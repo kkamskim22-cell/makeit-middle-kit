@@ -14,7 +14,7 @@ import {
   validateImageDraftPlan,
   verifyDraftPostRequirements,
 } from "./lib/site-03-image-draft-plan.mjs";
-import {ARTICLE_MINIMUM_CHARACTER_COUNT, parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
+import {ARTICLE_MINIMUM_CHARACTER_COUNT, countArticleCharacters, parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
 import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
@@ -34,6 +34,25 @@ function argument(name) {
 function positiveInteger(value) {
   const number = Number(value);
   return Number.isSafeInteger(number) && number > 0 ? number : 0;
+}
+
+export function validateRequiredCategoryIds({parentId, childId, expectedCategoryIds} = {}) {
+  if (!positiveInteger(parentId) || !positiveInteger(childId)) {
+    throw new Error("확인된 상위·세부 카테고리 ID가 필요합니다.");
+  }
+  if (expectedCategoryIds && (parentId !== expectedCategoryIds.parentId || childId !== expectedCategoryIds.childId)) {
+    throw new Error("사전 확인한 4-3 카테고리 ID와 일치하지 않습니다.");
+  }
+  return {parentId, childId};
+}
+
+export function postDraftOnce({url, headers, payload, request = fetch}) {
+  return request(url, {
+    method: "POST",
+    redirect: "error",
+    headers: {...headers, "Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
 }
 
 function siteUrl(value) {
@@ -129,9 +148,10 @@ async function createArticle({apiKey, plan}) {
           "Write only editable Gutenberg HTML for a Korean informational travel-climate article.",
           `Title: ${plan.title}`,
           "Compare Santiago, Chile and Mendoza, Argentina across seasons, explaining the Andes rain-shadow context carefully.",
+          "Fact-check these points: Southern Hemisphere seasons are reversed from Korea; Santiago has a Mediterranean pattern with dry summers and most rain in the cool season; Mendoza is arid to semi-arid on the eastern side of the Andes, with stronger continental and day-night temperature ranges and relatively more warm-season convective rain. Mention winter pass or mountain-road disruption and hot-season sun/dehydration only as practical possibilities, not guarantees.",
           `Use these sources as a fact-checking checklist and include a short sources section with these URLs: ${plan.sources.join(" ")}`,
-          "Aim for 1,800-2,500 Korean visible characters excluding HTML tags and whitespace; longer is allowed only when the content remains substantive and complete.",
-          "Use 3-5 meaningful h2 headings, paragraphs, and a comparison table. Do not repeat ideas or add filler just to increase length.",
+          "The final answer must contain 1,900-2,200 Korean visible characters excluding HTML tags and whitespace, and must never be shorter than 1,800 characters. Silently check the length before answering and expand with specific seasonal comparisons and practical travel preparation when needed.",
+          "Use exactly 5 meaningful h2 headings, 2-3 substantive paragraphs per heading, one comparison table, one short practical checklist, and the sources section. Do not repeat ideas or add filler just to increase length.",
           "Do not use h1, Markdown, scripts, iframes, or unsupported claims.",
           `SEO keyword: ${plan.seo.keyword}`,
         ].join("\n")}],
@@ -181,7 +201,7 @@ async function createAndUploadImage({apiKey, base, headers, image, title, onUplo
   return {id: verified.id, sourceUrl: verified.source_url, altText: verified.alt_text, caption: image.alt};
 }
 
-export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORKFLOW_REF} = {}) {
+export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORKFLOW_REF, expectedCategoryIds} = {}) {
   if (process.env.GITHUB_ACTIONS !== "true" || process.env.GITHUB_EVENT_NAME !== "workflow_dispatch" || process.env.GITHUB_WORKFLOW_REF !== expectedWorkflowRef || process.env.GITHUB_RUN_ATTEMPT !== "1") {
     throw new Error("전용 후속 워크플로의 최초 시도에서만 실행할 수 있습니다.");
   }
@@ -189,9 +209,13 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
   const plan = validateImageDraftPlan(JSON.parse(readFileSync(planPath, "utf8")));
   const base = siteUrl(env.ADSENSE_SITE_03_URL);
   const headers = {...browserHeaders(base), Authorization: authorization(env.ADSENSE_SITE_03_USER, env.ADSENSE_SITE_03_APP_PASSWORD), Accept: "application/json"};
-  const parentId = positiveInteger(argument("parent-category-id"));
-  const childId = positiveInteger(argument("child-category-id"));
-  if (!base || !parentId || !childId) throw new Error("확인된 상위·세부 카테고리 ID가 필요합니다.");
+  const categoryIds = validateRequiredCategoryIds({
+    parentId: positiveInteger(argument("parent-category-id")),
+    childId: positiveInteger(argument("child-category-id")),
+    expectedCategoryIds,
+  });
+  const {parentId, childId} = categoryIds;
+  if (!base) throw new Error("사이트 주소가 필요합니다.");
   const mediaRecorder = createMediaIdRecorder();
   const recordUploadedMedia = (record) => {
     const summary = mediaRecorder.record(record);
@@ -210,6 +234,7 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     if (!parent || !child) throw new Error("기존 카테고리 4-3의 상위·세부 ID 관계를 확인하지 못했습니다.");
     stage = "article_generation";
     const article = await createArticle({apiKey: env.OPENAI_API_KEY, plan});
+    const articleCharacterCount = countArticleCharacters(article);
     stage = "article_similarity_validation";
     assertArticleContentDistinct(article, posts);
     stage = "wordpress_preupload_duplicate_recheck";
@@ -231,7 +256,11 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     if (assessPlanSimilarity(plan, currentPosts).any) throw new Error("생성 직전 기존 글과 제목 또는 핵심 주제가 유사하여 중단합니다.");
     assertArticleContentDistinct(article, currentPosts);
     stage = "wordpress_draft_create";
-    const createdResponse = await fetch(`${base}/wp-json/wp/v2/posts?context=edit`, {method: "POST", headers: {...headers, "Content-Type": "application/json"}, body: JSON.stringify({title: plan.title, content, status: "draft", categories: [parentId, childId], featured_media: featured.id, excerpt: plan.seo.description})});
+    const createdResponse = await postDraftOnce({
+      url: `${base}/wp-json/wp/v2/posts?context=edit`,
+      headers,
+      payload: {title: plan.title, content, status: "draft", categories: [parentId, childId], featured_media: featured.id, excerpt: plan.seo.description},
+    });
     const created = await jsonResponse(createdResponse, "article_response");
     if (!createdResponse.ok || !Number.isSafeInteger(created.id)) throw attachTrialDiagnostic(new Error("임시글 생성 실패"), "article_response", {httpStatus: createdResponse.status});
     stage = "wordpress_draft_verify";
@@ -243,7 +272,7 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const verifiedPosts = await getAllPosts({base, headers});
     const matchingIds = matchingTitlePostIds(plan.title, verifiedPosts);
     if (matchingIds.length !== 1 || matchingIds[0] !== post.id) throw new Error("생성 후 제목 중복 검증에 실패했습니다.");
-    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, duplicateTitleCount: matchingIds.length, contentSimilarity: "passed", ...mediaSummary}));
+    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, articleCharacterCount, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, duplicateTitleCount: matchingIds.length, contentSimilarity: "passed", ...mediaSummary}));
   } catch (error) {
     console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage), ...mediaRecorder.summary()}));
     process.exitCode = 1;

@@ -87,7 +87,7 @@ export async function runSite03ImageDraftPreflight({siteBase, authorization, req
   if (!target?.title || target.categoryKey !== TARGET_CATEGORY_KEY || !target.parentName || target.childName !== EXPECTED_CHILD_NAME) {
     throw safeFailure("target_validation", {reason: "invalid_target"});
   }
-  if (!Array.isArray(recoveredHistory) || recoveredHistory.length !== 68 || !Array.isArray(trialHistory) || trialHistory.length !== 1 || trialHistory[0]?.postId !== 965) {
+  if (!Array.isArray(recoveredHistory) || recoveredHistory.length < 68 || !Array.isArray(trialHistory) || trialHistory.length !== 1 || trialHistory[0]?.postId !== 965) {
     throw safeFailure("history_validation", {reason: "history_invalid"});
   }
   const headers = {Authorization: authorization, Accept: "application/json"};

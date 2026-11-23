@@ -112,15 +112,15 @@ test("복구 이력은 로그에서 확인한 고유한 제목과 글 ID만 허�
   assert.throws(() => validateRecoveredHistory([...records, {...records[0], title: "임의 제목"}]), /중복/);
 });
 
-test("복구 이력은 GitHub Actions 로그의 68개 제목과 글 ID를 보존한다", () => {
+test("복구 이력은 기존 68개 제목과 글 ID를 보존하면서 검증 기록을 누적한다", () => {
   const path = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/recovered-history.json", import.meta.url));
   const records = readRecoveredHistory(path);
-  assert.equal(records.length, 68);
+  assert.ok(records.length >= 68);
   assert.deepEqual(records[0], {
     ok: true, site: 3, title: "벚꽃으로 유명한 세계 여행지의 기후적 특징", postId: 744, status: "draft",
     recovery: {source: "github-actions-log", runId: 39734583604, jobId: 119677191159},
   });
-  assert.deepEqual(records.at(-1), {
+  assert.deepEqual(records[67], {
     ok: true, site: 3, title: "대륙성 기후 여행지에서 계절별 기온 차이가 큰 이유", postId: 878, status: "draft",
     recovery: {source: "github-actions-log", runId: 39893033520, jobId: 120216970851},
   });

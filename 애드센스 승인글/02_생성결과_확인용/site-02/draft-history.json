@@ -672,7 +672,7 @@
       55,
       62
     ],
-    "createdAt": "2026-11-22T07:13:16.827Z"
+    "createdAt": "2026-11-23T07:57:40.419Z"
   },
   {
     "ok": true,
@@ -687,6 +687,36 @@
       55,
       57
     ],
-    "createdAt": "2026-11-22T07:13:16.827Z"
+    "createdAt": "2026-11-23T07:57:40.419Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령 주민의 지역 경험을 청년 세대와 공유하는 방법",
+    "postId": 4568,
+    "status": "draft",
+    "slug": "sharing-local-experience-across-generations",
+    "categoryId": 17,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      17
+    ],
+    "createdAt": "2026-11-23T07:58:51.357Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "주거단지 내 공동시설 운영에서 나타나는 세대 간 의견 차이",
+    "postId": 4570,
+    "status": "draft",
+    "slug": "generation-gap-in-shared-facility-management",
+    "categoryId": 63,
+    "parentCategoryId": 16,
+    "categoryIds": [
+      16,
+      63
+    ],
+    "createdAt": "2026-11-23T07:58:51.357Z"
   }
 ]

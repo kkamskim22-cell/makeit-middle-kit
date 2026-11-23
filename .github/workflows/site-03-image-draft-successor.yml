@@ -34,6 +34,11 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
+      - name: Runner 외부 IP 기록
+        run: |
+          runner_ip=$(curl --fail --silent --show-error --max-time 10 https://api.ipify.org)
+          test -n "$runner_ip"
+          echo "runner external IP: $runner_ip"
       - name: 승인된 신규 단일 실행 이력 확인
         working-directory: 99_절대_건들지마세요_프로그램파일
         env:

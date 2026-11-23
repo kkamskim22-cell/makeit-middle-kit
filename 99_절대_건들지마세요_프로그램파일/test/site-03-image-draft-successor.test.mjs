@@ -80,6 +80,8 @@ test("신규 워크플로는 읽기 권한·동시 실행 차단·가드 선행 
   assert.match(workflow, /github\.run_attempt == 1/);
   assert.match(workflow, /site-03-image-draft-successor-run-guard\.mjs/);
   assert.match(workflow, /site-03-image-draft-successor\.mjs/);
+  assert.match(workflow, /api\.ipify\.org/);
+  assert.ok(workflow.indexOf("api.ipify.org") < workflow.indexOf("site-03-image-draft-successor-run-guard.mjs"));
   assert.ok(workflow.indexOf("site-03-image-draft-successor-run-guard.mjs") < workflow.indexOf("site-03-image-draft-successor.mjs"));
   assert.match(workflow, /if:\s*always\(\)/);
 });

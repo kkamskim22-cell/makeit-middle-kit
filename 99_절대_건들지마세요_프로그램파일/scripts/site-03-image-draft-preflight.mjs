@@ -81,7 +81,7 @@ function findCategoryPair(categories, target) {
   return {parent, child: childMatches[0]};
 }
 
-export async function runSite03ImageDraftPreflight({siteBase, authorization, request = fetch, target, recoveredHistory, trialHistory}) {
+export async function runSite03ImageDraftPreflight({siteBase, authorization, request = fetch, target, recoveredHistory, trialHistory, expectedCategoryIds}) {
   const base = normalizedSiteUrl(siteBase);
   if (!/^https:\/\//i.test(base) || !authorization) throw safeFailure("settings", {reason: "missing_settings"});
   if (!target?.title || target.categoryKey !== TARGET_CATEGORY_KEY || !target.parentName || target.childName !== EXPECTED_CHILD_NAME) {
@@ -97,6 +97,10 @@ export async function runSite03ImageDraftPreflight({siteBase, authorization, req
   }
   const categories = await readAllPages({url: categoriesUrl, headers, request, stage: "category_get"});
   const pair = findCategoryPair(categories.records, target);
+  if (expectedCategoryIds &&
+      (pair.parent.id !== expectedCategoryIds.parentId || pair.child.id !== expectedCategoryIds.childId)) {
+    throw safeFailure("category_validation", {reason: "category_id_mismatch"});
+  }
 
   const postsUrl = new URL(`${base}/wp-json/wp/v2/posts`);
   for (const [key, value] of Object.entries({context: "edit", status: "draft,pending,future,publish,private,trash", per_page: "100", orderby: "id", order: "asc", _fields: "id,title,content"})) {
@@ -153,6 +157,7 @@ async function main() {
     target: targetFromCatalog(),
     recoveredHistory: readRecoveredHistory(join(historyRoot, "recovered-history.json")),
     trialHistory: readTrialVerifiedHistory(join(historyRoot, "trial-verified-history.json")),
+    expectedCategoryIds: {parentId: 16, childId: 19},
     request: (url, options) => fetch(url, {...options, headers: {...browserHeaders(url), ...options.headers}, signal: AbortSignal.timeout(30000)}),
   });
   console.log(JSON.stringify(result));

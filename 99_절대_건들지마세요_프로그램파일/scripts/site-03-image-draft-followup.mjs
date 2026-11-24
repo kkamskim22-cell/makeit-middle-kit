@@ -150,7 +150,7 @@ async function createArticle({apiKey, plan}) {
           "Compare Santiago, Chile and Mendoza, Argentina across seasons, explaining the Andes rain-shadow context carefully.",
           "Fact-check these points: Southern Hemisphere seasons are reversed from Korea; Santiago has a Mediterranean pattern with dry summers and most rain in the cool season; Mendoza is arid to semi-arid on the eastern side of the Andes, with stronger continental and day-night temperature ranges and relatively more warm-season convective rain. Mention winter pass or mountain-road disruption and hot-season sun/dehydration only as practical possibilities, not guarantees.",
           `Use these sources as a fact-checking checklist and include a short sources section with these URLs: ${plan.sources.join(" ")}`,
-          "The final answer must contain 1,900-2,200 Korean visible characters excluding HTML tags and whitespace, and must never be shorter than 1,800 characters. Silently check the length before answering and expand with specific seasonal comparisons and practical travel preparation when needed.",
+          "The final answer should contain 1,600-2,000 Korean visible characters excluding HTML tags and whitespace, and must never be shorter than 1,300 characters. Silently check the length before answering and expand with specific seasonal comparisons and practical travel preparation when needed.",
           "Use exactly 5 meaningful h2 headings, 2-3 substantive paragraphs per heading, one comparison table, one short practical checklist, and the sources section. Do not repeat ideas or add filler just to increase length.",
           "Do not use h1, Markdown, scripts, iframes, or unsupported claims.",
           `SEO keyword: ${plan.seo.keyword}`,

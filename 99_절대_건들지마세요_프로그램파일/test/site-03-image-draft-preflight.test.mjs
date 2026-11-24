@@ -148,3 +148,20 @@ test("카테고리 부모 관계가 다르거나 HTTP 오류이면 검증에 실
     (error) => error?.safeDiagnostic?.reason === "category_mapping_failed",
   );
 });
+
+test("이름으로 확인한 4-3 카테고리가 승인된 ID 16과 19가 아니면 중단한다", async () => {
+  await assert.rejects(
+    runSite03ImageDraftPreflight({
+      siteBase: "https://site.example",
+      authorization: "Basic test-only-secret",
+      request: async (url) => new URL(url).pathname.endsWith("/categories")
+        ? list([{id: 20, name: target.parentName, parent: 0}, {id: 21, name: target.childName, parent: 20}])
+        : list([]),
+      target,
+      recoveredHistory: recovered,
+      trialHistory: trial,
+      expectedCategoryIds: {parentId: 16, childId: 19},
+    }),
+    (error) => error?.safeDiagnostic?.reason === "category_id_mismatch",
+  );
+});

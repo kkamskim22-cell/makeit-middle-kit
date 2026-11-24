@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {parseArticleResponseData} from "../scripts/lib/site-03-image-draft-article.mjs";
+import {ARTICLE_MINIMUM_CHARACTER_COUNT, parseArticleResponseData} from "../scripts/lib/site-03-image-draft-article.mjs";
 import {safeTrialDiagnostic} from "../scripts/lib/site-03-trial-diagnostics.mjs";
 
 const validHtml = `<!-- wp:paragraph --><p>${"가".repeat(1800)}</p><!-- /wp:paragraph -->`;
@@ -31,16 +31,17 @@ test("최상위 output_text 본문도 기존처럼 허용한다", () => {
   assert.equal(parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: validHtml, output: []}}), validHtml);
 });
 
-test("공백 제외 실제 본문이 정확히 1,500자이면 허용한다", () => {
-  const html = `<!-- wp:paragraph --><p>${"가 ".repeat(1500)}</p><!-- /wp:paragraph -->`;
+test("사이트 3 최소 본문 기준은 공백 제외 1,300자이다", () => {
+  assert.equal(ARTICLE_MINIMUM_CHARACTER_COUNT, 1300);
+  const html = `<!-- wp:paragraph --><p>${"가 ".repeat(1300)}</p><!-- /wp:paragraph -->`;
   assert.equal(parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}), html);
 });
 
-test("공백 제외 실제 본문이 1,500자 미만이면 article_too_short로 중단한다", () => {
-  const html = `<!-- wp:paragraph --><p>${"가".repeat(1499)}</p><!-- /wp:paragraph -->`;
+test("공백 제외 실제 본문이 1,300자 미만이면 article_too_short로 중단한다", () => {
+  const html = `<!-- wp:paragraph --><p>${"가".repeat(1299)}</p><!-- /wp:paragraph -->`;
   assert.throws(
     () => parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}),
-    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1499, minimumCharacterCount: 1500}),
+    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1299, minimumCharacterCount: 1300}),
   );
 });
 
@@ -50,11 +51,26 @@ test("실제 본문이 2,500자를 초과해도 완성된 Gutenberg HTML이면 �
 });
 
 test("HTML 태그와 공백 엔티티 및 보이지 않는 공백은 글자 수를 늘리지 않는다", () => {
-  const html = `<!-- wp:paragraph --><p>${"가".repeat(1498)}${"\u200b".repeat(20)} &nbsp; &amp;</p><!-- /wp:paragraph -->`;
+  const html = `<!-- wp:paragraph --><p>${"가".repeat(1298)}${"\u200b".repeat(20)} &nbsp; &amp;</p><!-- /wp:paragraph -->`;
   assert.throws(
     () => parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}),
-    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1499, minimumCharacterCount: 1500}),
+    matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1299, minimumCharacterCount: 1300}),
   );
+});
+
+test("숫자형 공백 엔티티도 실제 본문 글자 수를 늘리지 않는다", () => {
+  for (const suffix of [
+    "&#32;&#x20;&#9;&#xA;",
+    "&#32&#x20",
+    "&Tab;&NewLine;&MediumSpace;",
+    '<span title="a>b"></span>',
+  ]) {
+    const html = `<!-- wp:paragraph --><p>${"가".repeat(1299)}${suffix}</p><!-- /wp:paragraph -->`;
+    assert.throws(
+      () => parseArticleResponseData({httpStatus: 200, data: {status: "completed", output_text: html, output: []}}),
+      matchesDiagnostic({stage: "article_generation", errorType: "article_too_short", characterCount: 1299, minimumCharacterCount: 1300}),
+    );
+  }
 });
 
 test("완료 응답에 실제 본문이 없으면 article_empty로 구분한다", () => {

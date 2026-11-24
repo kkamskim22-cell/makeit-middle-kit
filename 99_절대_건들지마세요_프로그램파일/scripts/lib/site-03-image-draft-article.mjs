@@ -1,6 +1,6 @@
 import {attachTrialDiagnostic} from "./site-03-trial-diagnostics.mjs";
 
-export const ARTICLE_MINIMUM_CHARACTER_COUNT = 1500;
+export const ARTICLE_MINIMUM_CHARACTER_COUNT = 1300;
 
 function responseFailure(errorType, details = {}) {
   return attachTrialDiagnostic(new Error(errorType), errorType, details);
@@ -40,11 +40,37 @@ export function extractArticleOutputText(data) {
   return parts.join("\n").trim();
 }
 
+function stripHtmlTags(html) {
+  let text = "";
+  let inTag = false;
+  let quote = "";
+  for (const character of String(html || "")) {
+    if (!inTag) {
+      if (character === "<") inTag = true;
+      else text += character;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = "";
+      continue;
+    }
+    if (character === '"' || character === "'") quote = character;
+    else if (character === ">") inTag = false;
+  }
+  return text;
+}
+
 export function countArticleCharacters(html) {
-  const visibleText = String(html || "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&(?:nbsp|ensp|emsp|thinsp|#0*160|#x0*a0);/gi, " ")
-    .replace(/&#(?:x[0-9a-f]+|\d+);/gi, "X")
+  const visibleText = stripHtmlTags(html)
+    .replace(/&(?:nbsp|ensp|emsp|emsp13|emsp14|numsp|puncsp|thinsp|hairsp|Tab|NewLine|MediumSpace|ThickSpace|VeryThinSpace|ZeroWidthSpace);/gi, " ")
+    .replace(/&#(x[0-9a-f]+|\d+);?/gi, (_entity, encoded) => {
+      const codePoint = encoded[0].toLowerCase() === "x"
+        ? Number.parseInt(encoded.slice(1), 16)
+        : Number.parseInt(encoded, 10);
+      return Number.isSafeInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : "X";
+    })
     .replace(/&[a-z][a-z0-9]+;/gi, "X")
     .replace(/[\s\u200b-\u200d\ufeff]/g, "");
   return Array.from(visibleText).length;

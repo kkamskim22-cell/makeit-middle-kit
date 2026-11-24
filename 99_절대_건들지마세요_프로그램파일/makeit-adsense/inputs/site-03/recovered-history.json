@@ -70,6 +70,7 @@
     {"ok":true,"site":3,"title":"사막 여행지의 계절별 낮과 밤 풍경 비교","postId":872,"status":"draft","recovery":{"source":"github-actions-log","runId":39889543723,"jobId":120205730515}},
     {"ok":true,"site":3,"title":"세계 산림 여행지에서 나뭇잎 색이 달라지는 기후 조건","postId":874,"status":"draft","recovery":{"source":"github-actions-log","runId":39893033520,"jobId":120216970851}},
     {"ok":true,"site":3,"title":"중위도 지역 세계 여행지에서 사계절이 뚜렷한 이유","postId":876,"status":"draft","recovery":{"source":"github-actions-log","runId":39893033520,"jobId":120216970851}},
-    {"ok":true,"site":3,"title":"대륙성 기후 여행지에서 계절별 기온 차이가 큰 이유","postId":878,"status":"draft","recovery":{"source":"github-actions-log","runId":39893033520,"jobId":120216970851}}
+    {"ok":true,"site":3,"title":"대륙성 기후 여행지에서 계절별 기온 차이가 큰 이유","postId":878,"status":"draft","recovery":{"source":"github-actions-log","runId":39893033520,"jobId":120216970851}},
+    {"ok":true,"site":3,"title":"산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교","postId":969,"status":"draft","recovery":{"source":"github-actions-log","runId":45340154855,"jobId":138261598618}}
   ]
 }

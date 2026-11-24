@@ -373,12 +373,12 @@ test("후속 초안은 제목·카테고리·요약문·핵심 키워드를 재�
   assert.throws(() => verifyDraftPostRequirements({post: {...post, excerpt: {raw: "다른 요약"}}, plan, parentId: 4, childId: 5, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), /SEO/);
 });
 
-test("지정한 이미지 포함 글 계획은 복구 이력과 시험 이력의 제목을 피한다", () => {
+test("완료된 이미지 포함 글 계획은 복구 이력에서 다시 사용되지 않도록 차단한다", () => {
   const planPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/image-draft-followup-plan.json", import.meta.url));
   const plan = JSON.parse(readFileSync(planPath, "utf8"));
   const recoveredPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/recovered-history.json", import.meta.url));
   const trialPath = fileURLToPath(new URL("../makeit-adsense/inputs/site-03/trial-verified-history.json", import.meta.url));
   const usedTitles = [...readRecoveredHistory(recoveredPath), ...readTrialVerifiedHistory(trialPath)].map((record) => record.title);
   assert.deepEqual(validateImageDraftPlan(plan), plan);
-  assert.equal(assertPlanTitleUnused(plan, usedTitles), true);
+  assert.throws(() => assertPlanTitleUnused(plan, usedTitles), /중복/);
 });

@@ -642,7 +642,7 @@
       5,
       7
     ],
-    "createdAt": "2026-11-23T03:32:44.025Z"
+    "createdAt": "2026-11-24T06:47:14.730Z"
   },
   {
     "ok": true,
@@ -657,6 +657,36 @@
       13,
       15
     ],
-    "createdAt": "2026-11-23T03:32:44.025Z"
+    "createdAt": "2026-11-24T06:47:14.730Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "여행 준비 중 확인한 정보를 예약·준비물·이동으로 나누어 기록하기",
+    "postId": 2620,
+    "status": "draft",
+    "slug": "organize-travel-info-by-booking-packing-transport",
+    "categoryId": 14,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      14
+    ],
+    "createdAt": "2026-11-24T06:48:37.140Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "업무 인수인계 메모에서 반드시 구분해야 할 진행 상태",
+    "postId": 2622,
+    "status": "draft",
+    "slug": "handover-memo-status-categories",
+    "categoryId": 16,
+    "parentCategoryId": 13,
+    "categoryIds": [
+      13,
+      16
+    ],
+    "createdAt": "2026-11-24T06:48:37.140Z"
   }
 ]

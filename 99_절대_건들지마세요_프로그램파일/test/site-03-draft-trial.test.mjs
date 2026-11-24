@@ -220,7 +220,7 @@ test("이미지 포함 후속 계획은 제목, 4-3 카테고리, 세 이미지�
   const plan = {
     title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교",
     categoryKey: "4-3",
-    seo: {title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교", description: "안데스 산맥 서쪽의 산티아고와 동쪽의 멘도사를 계절별 기후와 여행 환경으로 비교합니다.", keyword: "안데스 산맥 양쪽 여행지 계절 기후 비교"},
+    seo: {title: "안데스 산맥 양쪽 여행지 계절 기후 비교 | 산티아고와 멘도사", description: "안데스 산맥 양쪽 여행지 계절 기후 비교를 통해 산티아고와 멘도사의 여행 환경을 알아봅니다.", keyword: "안데스 산맥 양쪽 여행지 계절 기후 비교", slug: "안데스-산맥-양쪽-여행지-계절-기후-비교"},
     sources: ["https://www.britannica.com/place/Andes-Mountains", "https://www.britannica.com/place/Santiago-Chile", "https://www.britannica.com/place/Mendoza-Argentina"],
     images: [
       {role: "featured", placement: "featured", alt: "안데스 산맥 양쪽의 계절 기후 차이를 보여주는 산맥과 계곡 풍경", scene: "A text-free aerial view of the Andes between green western valleys and dry eastern foothills"},
@@ -229,7 +229,7 @@ test("이미지 포함 후속 계획은 제목, 4-3 카테고리, 세 이미지�
     ],
   };
   assert.deepEqual(validateImageDraftPlan(plan), plan);
-  assert.throws(() => validateImageDraftPlan({...plan, seo: {...plan.seo, title: "다른 SEO 제목"}}), /SEO title/);
+  assert.throws(() => validateImageDraftPlan({...plan, seo: {...plan.seo, title: "다른 SEO 제목"}}), /SEO 제목/);
   assert.throws(() => assertPlanTitleUnused(plan, [plan.title]), /중복/);
 });
 
@@ -350,16 +350,17 @@ test("본문 이미지는 빈 줄이 아닌 최상위 Gutenberg 블록 사이에
 test("후속 초안은 제목·카테고리·요약문·핵심 키워드를 재조회로 검증한다", () => {
   const plan = {
     title: "산맥을 사이에 둔 두 세계 여행지의 계절 기후 비교",
-    seo: {description: "안데스 산맥 양쪽 도시의 계절 기후를 비교합니다.", keyword: "안데스 계절 기후"},
+    seo: {description: "안데스 계절 기후를 중심으로 양쪽 도시를 비교합니다.", keyword: "안데스 계절 기후", slug: "안데스-계절-기후"},
     sources: ["https://example.test/source-a", "https://example.test/source-b", "https://example.test/source-c"],
   };
   const post = {
     status: "draft",
     title: {raw: plan.title},
     excerpt: {raw: plan.seo.description},
+    slug: encodeURIComponent(plan.seo.slug),
     categories: [4, 5],
     featured_media: 31,
-    content: {raw: '<p>안데스 계절 기후 https://example.test/source-a https://example.test/source-b https://example.test/source-c</p><img class="wp-image-32"><img class="wp-image-33">'},
+    content: {raw: '<!-- wp:paragraph -->\n<p>안데스 계절 기후 https://example.test/source-a https://example.test/source-b https://example.test/source-c</p>\n<!-- /wp:paragraph --><img class="wp-image-32"><img class="wp-image-33">'},
   };
   const media = [
     {id: 31, source_url: "https://site.example/31.jpg", alt_text: "대표 이미지"},

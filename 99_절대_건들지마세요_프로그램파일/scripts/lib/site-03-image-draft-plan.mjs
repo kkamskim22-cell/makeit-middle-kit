@@ -1,3 +1,5 @@
+import {site03SeoSlugMatches, validateSite03Seo} from "./site-03-seo.mjs";
+
 function requiredText(value, label) {
   if (typeof value !== "string" || !value.trim()) throw new Error(`${label}이 없습니다.`);
   return value.trim();
@@ -55,8 +57,7 @@ function shingles(value, size = 5) {
 export function validateImageDraftPlan(plan) {
   requiredText(plan?.title, "제목");
   if (!/^\d+-\d+$/.test(String(plan?.categoryKey || ""))) throw new Error("세부 카테고리 키 형식이 올바르지 않습니다.");
-  for (const field of ["title", "description", "keyword"]) requiredText(plan?.seo?.[field], `SEO ${field}`);
-  if (normalizedTitleKey(plan.seo.title) !== normalizedTitleKey(plan.title)) throw new Error("SEO title은 글 제목과 같아야 합니다.");
+  validateSite03Seo(plan?.seo);
   if (!Array.isArray(plan?.sources) || plan.sources.length < 3 || plan.sources.some((source) => !/^https:\/\//.test(source))) {
     throw new Error("확인 가능한 지리·기후 근거가 부족합니다.");
   }
@@ -139,8 +140,12 @@ export function verifyDraftPostRequirements({post, plan, parentId, childId, medi
     throw new Error("상위·세부 카테고리를 다시 확인하지 못했습니다.");
   }
   if (post?.excerpt?.raw !== plan?.seo?.description) throw new Error("SEO 요약문을 다시 확인하지 못했습니다.");
+  if (!site03SeoSlugMatches(post?.slug, plan?.seo?.slug)) throw new Error("SEO URL을 다시 확인하지 못했습니다.");
   const content = String(post?.content?.raw || "");
-  if (!content.includes(plan?.seo?.keyword || "")) throw new Error("SEO 핵심 키워드를 본문에서 다시 확인하지 못했습니다.");
+  const firstParagraph = content.match(/<!-- wp:paragraph -->\s*<p>([\s\S]*?)<\/p>\s*<!-- \/wp:paragraph -->/u)?.[1] || "";
+  if (!firstParagraph.includes(plan?.seo?.keyword || "") || !content.includes(plan?.seo?.keyword || "")) {
+    throw new Error("SEO 핵심 키워드를 첫 문단과 본문에서 다시 확인하지 못했습니다.");
+  }
   if (!(plan?.sources || []).every((source) => content.includes(source))) throw new Error("본문 출처를 다시 확인하지 못했습니다.");
   return verifyImageDraftRecord({post, media, featuredMediaId, inlineMediaIds});
 }

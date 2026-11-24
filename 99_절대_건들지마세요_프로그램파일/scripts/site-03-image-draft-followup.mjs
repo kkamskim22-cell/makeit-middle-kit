@@ -23,6 +23,12 @@ import {
   validateGutenbergArticle,
 } from "./lib/site-03-image-draft-article.mjs";
 import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
+import {
+  applyFocusKeywordToFirstParagraph,
+  buildSite03DraftPayload,
+  estimateVisibleWordCount,
+  saveRankMathMetadata,
+} from "./lib/site-03-seo.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -160,6 +166,7 @@ async function createArticle({apiKey, plan}) {
           "Fact-check these points: Southern Hemisphere seasons are reversed from Korea; Santiago has a Mediterranean pattern with dry summers and most rain in the cool season; Mendoza is arid to semi-arid on the eastern side of the Andes, with stronger continental and day-night temperature ranges and relatively more warm-season convective rain. Mention winter pass or mountain-road disruption and hot-season sun/dehydration only as practical possibilities, not guarantees.",
           `Use these exact source URL strings in the sources array, in this order: ${plan.sources.join(" ")}`,
           "The combined Korean text should contain 1,600-2,000 visible characters excluding whitespace, and must never be shorter than 1,300 characters.",
+          "A 600-word article is recommended when the subject supports it, but do not pad or repeat ideas and do not treat 600 words as a hard requirement.",
           "Use exactly 5 sections with 2-3 substantive paragraphs each, one 3-column comparison table with 2-8 rows, and a 3-6 item practical checklist. Do not repeat ideas or add filler.",
           "Every JSON string must be plain text without HTML, Markdown, scripts, or unsupported claims.",
           `SEO keyword: ${plan.seo.keyword}`,
@@ -192,12 +199,13 @@ async function createArticle({apiKey, plan}) {
   }
   const data = await jsonResponse(response, "article_response");
   if (!response.ok) throw attachTrialDiagnostic(new Error("본문 API 실패"), "article_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
-  return parseStructuredArticleResponseData({
+  const article = parseStructuredArticleResponseData({
     data,
     httpStatus: response.status,
     minimumCharacterCount: ARTICLE_MINIMUM_CHARACTER_COUNT,
     expectedSources: plan.sources,
   });
+  return applyFocusKeywordToFirstParagraph(article, plan.seo.keyword);
 }
 
 async function createAndUploadImage({apiKey, base, headers, image, title, onUploaded}) {
@@ -270,6 +278,7 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     stage = "article_generation";
     const article = await createArticle({apiKey: env.OPENAI_API_KEY, plan});
     const articleCharacterCount = countArticleCharacters(article);
+    const articleWordCount = estimateVisibleWordCount(article);
     stage = "article_similarity_validation";
     assertArticleContentDistinct(article, posts);
     stage = "wordpress_preupload_duplicate_recheck";
@@ -295,12 +304,14 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const createdResponse = await postDraftOnce({
       url: `${base}/wp-json/wp/v2/posts?context=edit`,
       headers,
-      payload: {title: plan.title, content, status: "draft", categories: [parentId, childId], featured_media: featured.id, excerpt: plan.seo.description},
+      payload: buildSite03DraftPayload({plan, content, parentId, childId, featuredMediaId: featured.id}),
     });
     const created = await jsonResponse(createdResponse, "article_response");
     if (!createdResponse.ok || !Number.isSafeInteger(created.id)) throw attachTrialDiagnostic(new Error("임시글 생성 실패"), "article_response", {httpStatus: createdResponse.status});
+    stage = "rank_math_metadata_save";
+    const rankMath = await saveRankMathMetadata({base, headers, postId: created.id, seo: plan.seo});
     stage = "wordpress_draft_verify";
-    const postResponse = await fetch(`${base}/wp-json/wp/v2/posts/${created.id}?context=edit&_fields=id,title,content,excerpt,status,categories,featured_media`, {method: "GET", headers});
+    const postResponse = await fetch(`${base}/wp-json/wp/v2/posts/${created.id}?context=edit&_fields=id,title,content,excerpt,slug,status,categories,featured_media`, {method: "GET", headers});
     const post = await jsonResponse(postResponse, "article_response");
     if (!postResponse.ok) throw attachTrialDiagnostic(new Error("임시글 재조회 실패"), "article_response", {httpStatus: postResponse.status});
     const verify = verifyDraftPostRequirements({post, plan, parentId, childId, media: [{id: featured.id, source_url: featured.sourceUrl, alt_text: featured.altText}, ...inline.map((item) => ({id: item.id, source_url: item.sourceUrl, alt_text: item.altText}))], featuredMediaId: featured.id, inlineMediaIds: inline.map((item) => item.id)});
@@ -310,7 +321,7 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const verifiedPosts = await getAllPosts({base, headers});
     const matchingIds = matchingTitlePostIds(plan.title, verifiedPosts);
     if (matchingIds.length !== 1 || matchingIds[0] !== post.id) throw new Error("생성 후 제목 중복 검증에 실패했습니다.");
-    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, articleCharacterCount, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, duplicateTitleCount: matchingIds.length, contentSimilarity: "passed", ...mediaSummary}));
+    console.log(JSON.stringify({site: 3, status: "draft", postId: post.id, articleCharacterCount, articleWordCount, rankMathSaved: rankMath.saved, imageCount: verify.imageCount, inlineImageCount: verify.inlineImageCount, duplicate: false, duplicateTitleCount: matchingIds.length, contentSimilarity: "passed", ...mediaSummary}));
   } catch (error) {
     console.error(JSON.stringify({site: 3, ...safeTrialDiagnostic(error, stage), ...mediaRecorder.summary()}));
     process.exitCode = 1;

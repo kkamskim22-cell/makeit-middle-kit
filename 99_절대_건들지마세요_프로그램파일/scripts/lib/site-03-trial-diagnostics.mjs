@@ -3,8 +3,12 @@ const ERROR_TYPES = new Set([
   "meta_response",
   "article_api",
   "article_response",
+  "article_structure_invalid",
   "article_incomplete",
   "article_empty",
+  "article_gutenberg_missing",
+  "article_gutenberg_structure",
+  "article_h1_forbidden",
   "article_html_invalid",
   "article_too_short",
 ]);
@@ -40,12 +44,20 @@ export function safeTrialDiagnostic(error, stage) {
   const htmlRule = safeText(source.htmlRule);
   const characterCount = Number.isInteger(source.characterCount) && source.characterCount >= 0 ? source.characterCount : null;
   const minimumCharacterCount = Number.isInteger(source.minimumCharacterCount) && source.minimumCharacterCount >= 0 ? source.minimumCharacterCount : null;
+  const hasGutenbergBlocks = typeof source.hasGutenbergBlocks === "boolean" ? source.hasGutenbergBlocks : null;
+  const hasH1 = typeof source.hasH1 === "boolean" ? source.hasH1 : null;
+  const requiredBlocks = Array.isArray(source.requiredBlocks)
+    ? source.requiredBlocks.map((item) => safeText(item)).filter(Boolean).slice(0, 5)
+    : null;
   if (httpStatus !== null) result.httpStatus = httpStatus;
   if (openAiCode) result.openAiCode = openAiCode;
   if (finishReason) result.finishReason = finishReason;
   if (htmlRule) result.htmlRule = htmlRule;
   if (characterCount !== null) result.characterCount = characterCount;
   if (minimumCharacterCount !== null) result.minimumCharacterCount = minimumCharacterCount;
+  if (hasGutenbergBlocks !== null) result.hasGutenbergBlocks = hasGutenbergBlocks;
+  if (hasH1 !== null) result.hasH1 = hasH1;
+  if (requiredBlocks !== null) result.requiredBlocks = requiredBlocks;
   return result;
 }
 

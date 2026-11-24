@@ -5,7 +5,8 @@ import {readFileSync} from "node:fs";
 import {runSite03DraftTrial} from "../scripts/lib/site-03-draft-trial.mjs";
 import {readRecoveredHistory, readTrialVerifiedHistory, validateRecoveredHistory, verifyRecoveredHistory} from "../scripts/lib/site-03-recovered-history.mjs";
 import {attachTrialDiagnostic, safeTrialDiagnostic, trialFailure} from "../scripts/lib/site-03-trial-diagnostics.mjs";
-import {getAllPosts} from "../scripts/site-03-image-draft-followup.mjs";
+import {getAllPosts, insertInlineImages} from "../scripts/site-03-image-draft-followup.mjs";
+import {parseStructuredArticleResponseData, validateGutenbergArticle} from "../scripts/lib/site-03-image-draft-article.mjs";
 import {
   assessPlanSimilarity,
   assertArticleContentDistinct,
@@ -308,6 +309,42 @@ test("대표 이미지와 본문 이미지 두 개가 업로드되고 Gutenberg 
   const post = {status: "draft", featured_media: 31, content: {raw: '<img class="wp-image-32"><img class="wp-image-33">'}};
   assert.deepEqual(verifyImageDraftRecord({post, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), {imageCount: 3, inlineImageCount: 2, status: "draft"});
   assert.throws(() => verifyImageDraftRecord({post: {...post, content: {raw: '<img class="wp-image-31"><img class="wp-image-32"><img class="wp-image-33">'}}, media, featuredMediaId: 31, inlineMediaIds: [32, 33]}), /중복/);
+});
+
+test("본문 이미지는 빈 줄이 아닌 최상위 Gutenberg 블록 사이에만 삽입된다", () => {
+  const sources = ["https://example.test/a", "https://example.test/b", "https://example.test/c"];
+  const document = {
+    sections: Array.from({length: 5}, (_, index) => ({
+      heading: `소제목 ${index + 1}`,
+      paragraphs: [`${"가".repeat(140)} 산티아고`, `${"나".repeat(140)} 멘도사`],
+    })),
+    table: {headers: ["항목", "산티아고", "멘도사"], rows: [["여름", "건조", "더움"], ["겨울", "비", "서늘"]]},
+    checklist: ["계절 확인", "자외선 대비", "도로 확인"],
+    sources,
+  };
+  const article = parseStructuredArticleResponseData({
+    data: {status: "completed", output_text: JSON.stringify(document), output: []},
+    expectedSources: sources,
+  }).replace(/\n\n/g, "");
+  const content = insertInlineImages(article, [
+    {id: 32, sourceUrl: "https://site.example/32.jpg", altText: "본문 이미지 하나", caption: "본문 이미지 하나"},
+    {id: 33, sourceUrl: "https://site.example/33.jpg", altText: "본문 이미지 둘", caption: "본문 이미지 둘"},
+  ]);
+  assert.deepEqual(validateGutenbergArticle(content, {
+    requireTravelArticleStructure: true,
+    expectedImages: [
+      {id: 32, sourceUrl: "https://site.example/32.jpg"},
+      {id: 33, sourceUrl: "https://site.example/33.jpg"},
+    ],
+  }), {headingCount: 7, paragraphCount: 11, tableCount: 1, listCount: 1, imageCount: 2});
+  const swappedClasses = content.replace("wp-image-32", "wp-image-TEMP").replace("wp-image-33", "wp-image-32").replace("wp-image-TEMP", "wp-image-33");
+  assert.throws(() => validateGutenbergArticle(swappedClasses, {
+    requireTravelArticleStructure: true,
+    expectedImages: [
+      {id: 32, sourceUrl: "https://site.example/32.jpg"},
+      {id: 33, sourceUrl: "https://site.example/33.jpg"},
+    ],
+  }), /이미지/);
 });
 
 test("후속 초안은 제목·카테고리·요약문·핵심 키워드를 재조회로 검증한다", () => {

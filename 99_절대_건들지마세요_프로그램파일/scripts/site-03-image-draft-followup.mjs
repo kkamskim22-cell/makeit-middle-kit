@@ -14,7 +14,14 @@ import {
   validateImageDraftPlan,
   verifyDraftPostRequirements,
 } from "./lib/site-03-image-draft-plan.mjs";
-import {ARTICLE_MINIMUM_CHARACTER_COUNT, countArticleCharacters, parseArticleResponseData} from "./lib/site-03-image-draft-article.mjs";
+import {
+  ARTICLE_MINIMUM_CHARACTER_COUNT,
+  countArticleBodyCharacters,
+  countArticleCharacters,
+  parseStructuredArticleResponseData,
+  splitTopLevelGutenbergBlocks,
+  validateGutenbergArticle,
+} from "./lib/site-03-image-draft-article.mjs";
 import {createMediaIdRecorder} from "./lib/site-03-image-draft-safety.mjs";
 import {attachTrialDiagnostic, safeOpenAiCode, safeTrialDiagnostic} from "./lib/site-03-trial-diagnostics.mjs";
 
@@ -76,12 +83,14 @@ function imageBlock(media) {
   ].join("\n");
 }
 
-function insertInlineImages(html, images) {
-  const blocks = String(html || "").trim().split(/\n{2,}/).filter(Boolean);
+export function insertInlineImages(html, images) {
+  const blocks = splitTopLevelGutenbergBlocks(html).map((block) => block.html);
   if (blocks.length < 3) throw new Error("본문 블록 수가 이미지 삽입에 충분하지 않습니다.");
-  blocks.splice(Math.min(3, blocks.length), 0, imageBlock(images[0]));
-  blocks.splice(Math.min(7, blocks.length), 0, imageBlock(images[1]));
-  return blocks.join("\n\n");
+  blocks.splice(Math.min(4, blocks.length), 0, imageBlock(images[0]));
+  blocks.splice(Math.min(10, blocks.length), 0, imageBlock(images[1]));
+  const content = blocks.join("\n\n");
+  validateGutenbergArticle(content, {requireTravelArticleStructure: true, expectedImages: images.map((image) => ({id: image.id, sourceUrl: image.sourceUrl}))});
+  return content;
 }
 
 async function jsonResponse(response, errorType) {
@@ -145,16 +154,37 @@ async function createArticle({apiKey, plan}) {
         model: "gpt-5.4-mini",
         max_output_tokens: 12000,
         input: [{role: "user", content: [
-          "Write only editable Gutenberg HTML for a Korean informational travel-climate article.",
+          "Write a Korean informational travel-climate article as the requested JSON object only.",
           `Title: ${plan.title}`,
           "Compare Santiago, Chile and Mendoza, Argentina across seasons, explaining the Andes rain-shadow context carefully.",
           "Fact-check these points: Southern Hemisphere seasons are reversed from Korea; Santiago has a Mediterranean pattern with dry summers and most rain in the cool season; Mendoza is arid to semi-arid on the eastern side of the Andes, with stronger continental and day-night temperature ranges and relatively more warm-season convective rain. Mention winter pass or mountain-road disruption and hot-season sun/dehydration only as practical possibilities, not guarantees.",
-          `Use these sources as a fact-checking checklist and include a short sources section with these URLs: ${plan.sources.join(" ")}`,
-          "The final answer should contain 1,600-2,000 Korean visible characters excluding HTML tags and whitespace, and must never be shorter than 1,300 characters. Silently check the length before answering and expand with specific seasonal comparisons and practical travel preparation when needed.",
-          "Use exactly 5 meaningful h2 headings, 2-3 substantive paragraphs per heading, one comparison table, one short practical checklist, and the sources section. Do not repeat ideas or add filler just to increase length.",
-          "Do not use h1, Markdown, scripts, iframes, or unsupported claims.",
+          `Use these exact source URL strings in the sources array, in this order: ${plan.sources.join(" ")}`,
+          "The combined Korean text should contain 1,600-2,000 visible characters excluding whitespace, and must never be shorter than 1,300 characters.",
+          "Use exactly 5 sections with 2-3 substantive paragraphs each, one 3-column comparison table with 2-8 rows, and a 3-6 item practical checklist. Do not repeat ideas or add filler.",
+          "Every JSON string must be plain text without HTML, Markdown, scripts, or unsupported claims.",
           `SEO keyword: ${plan.seo.keyword}`,
         ].join("\n")}],
+        text: {format: {
+          type: "json_schema",
+          name: "site_03_travel_article",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["sections", "table", "checklist", "sources"],
+            properties: {
+              sections: {type: "array", minItems: 5, maxItems: 5, items: {type: "object", additionalProperties: false, required: ["heading", "paragraphs"], properties: {
+                heading: {type: "string"}, paragraphs: {type: "array", minItems: 2, maxItems: 3, items: {type: "string"}},
+              }}},
+              table: {type: "object", additionalProperties: false, required: ["headers", "rows"], properties: {
+                headers: {type: "array", minItems: 3, maxItems: 3, items: {type: "string"}},
+                rows: {type: "array", minItems: 2, maxItems: 8, items: {type: "array", minItems: 3, maxItems: 3, items: {type: "string"}}},
+              }},
+              checklist: {type: "array", minItems: 3, maxItems: 6, items: {type: "string"}},
+              sources: {type: "array", minItems: 3, maxItems: 3, items: {type: "string"}},
+            },
+          },
+        }},
       }),
     });
   } catch (error) {
@@ -162,7 +192,12 @@ async function createArticle({apiKey, plan}) {
   }
   const data = await jsonResponse(response, "article_response");
   if (!response.ok) throw attachTrialDiagnostic(new Error("본문 API 실패"), "article_api", {httpStatus: response.status, openAiCode: safeOpenAiCode(data)});
-  return parseArticleResponseData({data, httpStatus: response.status, minimumCharacterCount: ARTICLE_MINIMUM_CHARACTER_COUNT});
+  return parseStructuredArticleResponseData({
+    data,
+    httpStatus: response.status,
+    minimumCharacterCount: ARTICLE_MINIMUM_CHARACTER_COUNT,
+    expectedSources: plan.sources,
+  });
 }
 
 async function createAndUploadImage({apiKey, base, headers, image, title, onUploaded}) {
@@ -250,6 +285,7 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     for (const image of inlinePlans) inline.push(await createAndUploadImage({apiKey: env.OPENAI_API_KEY, base, headers, image, title: plan.title, onUploaded: recordUploadedMedia}));
     const mediaSummary = mediaRecorder.assertComplete();
     const content = insertInlineImages(article, inline);
+    validateGutenbergArticle(content, {requireTravelArticleStructure: true, expectedImages: inline.map((item) => ({id: item.id, sourceUrl: item.sourceUrl}))});
     stage = "wordpress_duplicate_recheck";
     const currentPosts = await getAllPosts({base, headers});
     assertPlanTitleUnused(plan, [...currentPosts.map((post) => post?.title?.raw), ...history.map((entry) => entry.title)]);
@@ -268,6 +304,8 @@ export async function runImageDraftFollowup({expectedWorkflowRef = ORIGINAL_WORK
     const post = await jsonResponse(postResponse, "article_response");
     if (!postResponse.ok) throw attachTrialDiagnostic(new Error("임시글 재조회 실패"), "article_response", {httpStatus: postResponse.status});
     const verify = verifyDraftPostRequirements({post, plan, parentId, childId, media: [{id: featured.id, source_url: featured.sourceUrl, alt_text: featured.altText}, ...inline.map((item) => ({id: item.id, source_url: item.sourceUrl, alt_text: item.altText}))], featuredMediaId: featured.id, inlineMediaIds: inline.map((item) => item.id)});
+    validateGutenbergArticle(post.content.raw, {requireTravelArticleStructure: true, expectedImages: inline.map((item) => ({id: item.id, sourceUrl: item.sourceUrl}))});
+    if (countArticleBodyCharacters(post.content.raw) < ARTICLE_MINIMUM_CHARACTER_COUNT) throw new Error("저장된 본문 분량 검증에 실패했습니다.");
     stage = "wordpress_duplicate_verify";
     const verifiedPosts = await getAllPosts({base, headers});
     const matchingIds = matchingTitlePostIds(plan.title, verifiedPosts);

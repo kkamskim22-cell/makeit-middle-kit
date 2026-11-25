@@ -732,7 +732,7 @@
       16,
       19
     ],
-    "createdAt": "2026-11-24T10:13:25.619Z"
+    "createdAt": "2026-11-25T08:57:30.979Z"
   },
   {
     "ok": true,
@@ -747,6 +747,36 @@
       20,
       59
     ],
-    "createdAt": "2026-11-24T10:13:25.619Z"
+    "createdAt": "2026-11-25T08:57:30.979Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 세대별 경험을 활용한 공동 기록 프로젝트 사례",
+    "postId": 4581,
+    "status": "draft",
+    "slug": "intergenerational-community-archive-project",
+    "categoryId": 22,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      22
+    ],
+    "createdAt": "2026-11-25T08:58:48.613Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "디지털 기록 문화의 확산이 세대 간 경험 전달에 미치는 영향",
+    "postId": 4583,
+    "status": "draft",
+    "slug": "digital-record-culture-intergenerational-experience-sharing",
+    "categoryId": 60,
+    "parentCategoryId": 20,
+    "categoryIds": [
+      20,
+      60
+    ],
+    "createdAt": "2026-11-25T08:58:48.613Z"
   }
 ]

@@ -762,7 +762,7 @@
       20,
       22
     ],
-    "createdAt": "2026-11-25T08:58:48.613Z"
+    "createdAt": "2026-11-26T08:42:14.881Z"
   },
   {
     "ok": true,
@@ -777,6 +777,36 @@
       20,
       60
     ],
-    "createdAt": "2026-11-25T08:58:48.613Z"
+    "createdAt": "2026-11-26T08:42:14.881Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족 족보와 가계도에 대한 관심이 달라지는 배경",
+    "postId": 4588,
+    "status": "draft",
+    "slug": "aging-society-family-lineage-interest",
+    "categoryId": 5,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      5
+    ],
+    "createdAt": "2026-11-26T08:43:36.784Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "세대별 타인에게 도움을 요청하는 태도가 달라지는 사회문화적 배경",
+    "postId": 4590,
+    "status": "draft",
+    "slug": "generational-differences-in-asking-for-help",
+    "categoryId": 61,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      61
+    ],
+    "createdAt": "2026-11-26T08:43:36.784Z"
   }
 ]

@@ -702,7 +702,7 @@
       9,
       12
     ],
-    "createdAt": "2026-11-25T05:16:31.678Z"
+    "createdAt": "2026-11-26T04:42:42.555Z"
   },
   {
     "ok": true,
@@ -717,6 +717,36 @@
       9,
       10
     ],
-    "createdAt": "2026-11-25T05:16:31.678Z"
+    "createdAt": "2026-11-26T04:42:42.556Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "메모 사이에 연결 이유를 한 문장으로 남기는 방법",
+    "postId": 2653,
+    "status": "draft",
+    "slug": "one-sentence-connection-reason-between-notes",
+    "categoryId": 11,
+    "parentCategoryId": 9,
+    "categoryIds": [
+      9,
+      11
+    ],
+    "createdAt": "2026-11-26T04:43:56.626Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "개인 경험과 일반적인 정보를 구분해 글 초안에 배치하는 방법",
+    "postId": 2655,
+    "status": "draft",
+    "slug": "separate-personal-experience-from-general-information",
+    "categoryId": 20,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      20
+    ],
+    "createdAt": "2026-11-26T04:43:56.626Z"
   }
 ]

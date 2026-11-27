@@ -732,7 +732,7 @@
       9,
       11
     ],
-    "createdAt": "2026-11-26T04:43:56.626Z"
+    "createdAt": "2026-11-27T04:48:46.873Z"
   },
   {
     "ok": true,
@@ -747,6 +747,36 @@
       17,
       20
     ],
-    "createdAt": "2026-11-26T04:43:56.626Z"
+    "createdAt": "2026-11-27T04:48:46.873Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "같은 문제가 반복될 때 이전 해결 기록을 비교하는 방법",
+    "postId": 2661,
+    "status": "draft",
+    "slug": "compare-past-solutions-for-repeat-problems",
+    "categoryId": 19,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      19
+    ],
+    "createdAt": "2026-11-27T04:50:02.474Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "아이디어를 실행 가능한 첫 행동으로 바꾸는 질문 다섯 가지",
+    "postId": 2663,
+    "status": "draft",
+    "slug": "questions-to-turn-ideas-into-actions",
+    "categoryId": 18,
+    "parentCategoryId": 17,
+    "categoryIds": [
+      17,
+      18
+    ],
+    "createdAt": "2026-11-27T04:50:02.474Z"
   }
 ]

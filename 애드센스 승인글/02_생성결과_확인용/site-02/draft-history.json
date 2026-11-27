@@ -792,7 +792,7 @@
       4,
       5
     ],
-    "createdAt": "2026-11-26T08:43:36.784Z"
+    "createdAt": "2026-11-27T08:53:52.623Z"
   },
   {
     "ok": true,
@@ -807,6 +807,36 @@
       4,
       61
     ],
-    "createdAt": "2026-11-26T08:43:36.784Z"
+    "createdAt": "2026-11-27T08:53:52.623Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 가족 간 사과하는 방식에 나타나는 세대별 차이",
+    "postId": 4600,
+    "status": "draft",
+    "slug": "generational-differences-in-family-apologies",
+    "categoryId": 54,
+    "parentCategoryId": 4,
+    "categoryIds": [
+      4,
+      54
+    ],
+    "createdAt": "2026-11-27T08:55:17.661Z"
+  },
+  {
+    "ok": true,
+    "site": 2,
+    "title": "고령사회에서 부모의 중요한 물건을 정리할 때 가족이 의견을 조율하는 방법",
+    "postId": 4602,
+    "status": "draft",
+    "slug": "family-coordination-for-sorting-parents-possessions",
+    "categoryId": 9,
+    "parentCategoryId": 8,
+    "categoryIds": [
+      8,
+      9
+    ],
+    "createdAt": "2026-11-27T08:55:17.661Z"
   }
 ]

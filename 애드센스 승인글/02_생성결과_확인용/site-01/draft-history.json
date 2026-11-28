@@ -762,7 +762,7 @@
       17,
       19
     ],
-    "createdAt": "2026-11-27T04:50:02.474Z"
+    "createdAt": "2026-11-28T04:33:24.181Z"
   },
   {
     "ok": true,
@@ -777,6 +777,36 @@
       17,
       18
     ],
-    "createdAt": "2026-11-27T04:50:02.474Z"
+    "createdAt": "2026-11-28T04:33:24.181Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "한 달 동안 쌓인 메모에서 실제로 다시 사용한 기록을 찾는 방법",
+    "postId": 2676,
+    "status": "draft",
+    "slug": "find-reused-notes-from-a-month",
+    "categoryId": 24,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      24
+    ],
+    "createdAt": "2026-11-28T04:34:27.478Z"
+  },
+  {
+    "ok": true,
+    "site": 1,
+    "title": "메모 도구를 바꾸기 전에 기존 기록을 점검하는 체크리스트",
+    "postId": 2678,
+    "status": "draft",
+    "slug": "check-existing-notes-before-switching-tools",
+    "categoryId": 23,
+    "parentCategoryId": 21,
+    "categoryIds": [
+      21,
+      23
+    ],
+    "createdAt": "2026-11-28T04:34:27.478Z"
   }
 ]
